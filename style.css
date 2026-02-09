@@ -1,0 +1,117 @@
+/* Fundo Escuro do Modal */
+.kanban-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #f4f6fb;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Cabeçalho */
+.kanban-header {
+    height: 60px;
+    background: white;
+    border-bottom: 1px solid #e6e6e6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+}
+
+.kanban-header h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.2rem;
+}
+
+#close-kanban {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* Área das Colunas */
+.kanban-board {
+    flex: 1;
+    display: flex;
+    overflow-x: auto;
+    padding: 20px;
+    gap: 20px;
+}
+
+/* Coluna Individual */
+.kanban-column {
+    min-width: 300px;
+    max-width: 300px;
+    background: #eef2f6;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: calc(100vh - 100px);
+}
+
+.kanban-column h3 {
+    padding: 15px;
+    margin: 0;
+    font-size: 1rem;
+    color: #4b5563;
+    border-bottom: 2px solid #d1d5db;
+}
+
+/* Lista de Cards */
+.kanban-list {
+    padding: 10px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Card da Conversa */
+.kanban-card {
+    background: white;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 4px solid #3b82f6; /* Cor azul lateral */
+}
+
+.kanban-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #9ca3af;
+    margin-bottom: 5px;
+}
+
+.sender-name {
+    font-weight: bold;
+    color: #111827;
+    margin-bottom: 4px;
+}
+
+.last-message {
+    font-size: 0.9rem;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
