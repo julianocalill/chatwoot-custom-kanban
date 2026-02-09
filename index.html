@@ -69,7 +69,7 @@
                             <i class="fa-solid fa-magnifying-glass"></i> Buscar
                         </button>
                     </div>
-                    <p class="text-[10px] text-blue-400 mt-1 pl-1">Digite o telefone ou ID e clique em buscar para puxar Nome, Empresa e Email.</p>
+                    <p class="text-[10px] text-blue-400 mt-1 pl-1">Busca dados no Chatwoot. Se não existir, criaremos o contato ao salvar.</p>
                 </div>
 
                 <div class="space-y-4">
@@ -99,8 +99,8 @@
                             <input type="text" id="dealChatId" class="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-50" readonly placeholder="Auto">
                         </div>
                          <div class="col-span-1">
-                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Canal</label>
-                            <input type="text" id="dealChannel" class="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-50" readonly placeholder="Auto">
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Canal (Editável)</label>
+                            <input type="text" id="dealChannel" class="w-full border border-gray-300 rounded-lg p-2.5 focus:border-blue-500 outline-none" placeholder="Ex: Indicação">
                         </div>
                     </div>
 
@@ -110,7 +110,7 @@
                             <input type="datetime-local" id="dealMeeting" class="w-full border border-gray-200 rounded-lg p-2 outline-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">🎯 Previsão Fechamento</label>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">🏁 Previsão Fechamento</label>
                             <input type="date" id="dealClosing" class="w-full border border-gray-200 rounded-lg p-2 outline-none">
                         </div>
                     </div>
@@ -139,6 +139,10 @@
             <h2 class="font-bold text-lg mb-4 text-gray-800">🔌 Conexões</h2>
             
             <div class="space-y-4">
+                <div class="bg-yellow-50 p-3 rounded text-[10px] text-yellow-800 border border-yellow-200">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <b>Atenção:</b> Essas configurações ficam salvas neste navegador. Se usar outro computador, precisará preencher novamente.
+                </div>
+
                 <div>
                     <h3 class="text-xs font-bold text-blue-600 uppercase mb-2">Banco de Dados (Supabase)</h3>
                     <input type="text" id="sbUrl" placeholder="Project URL" class="w-full border p-2 rounded text-xs mb-2">
@@ -146,7 +150,7 @@
                 </div>
                 <hr>
                 <div>
-                    <h3 class="text-xs font-bold text-green-600 uppercase mb-2">Chatwoot API (Para Importar)</h3>
+                    <h3 class="text-xs font-bold text-green-600 uppercase mb-2">Chatwoot API</h3>
                     <input type="text" id="cwUrl" placeholder="URL (ex: https://chat.bemore.ia.br)" class="w-full border p-2 rounded text-xs mb-2">
                     <input type="text" id="cwToken" placeholder="User Access Token (Perfil)" class="w-full border p-2 rounded text-xs mb-2">
                     <input type="text" id="cwAccount" placeholder="ID da Conta (ex: 1)" class="w-full border p-2 rounded text-xs">
@@ -219,11 +223,9 @@
                 window.ui.updateCounts();
             },
 
-            // --- A MÁGICA DA IMPORTAÇÃO (CORRIGIDO DATA) ---
             fetchChatwootData: async () => {
                 const query = document.getElementById('dealPhone').value.trim();
                 if(!query) return alert("Digite um telefone ou ID para buscar.");
-                
                 if(!config.cwToken || !config.cwUrl) return alert("Configure o Token do Chatwoot na engrenagem.");
 
                 const btn = document.querySelector('button[onclick="window.app.fetchChatwootData()"]');
@@ -231,7 +233,7 @@
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Buscando...';
 
                 try {
-                    // 1. Tenta buscar Contato
+                    // Busca Contato
                     let searchUrl = `${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/search?q=${query}`;
                     let res = await fetch(searchUrl, { headers: { 'api_access_token': config.cwToken } });
                     let json = await res.json();
@@ -240,18 +242,14 @@
                     if(json.payload && json.payload.length > 0) {
                         contact = json.payload[0];
                     } else {
-                        // Se não achou contato, tenta buscar conversa direta se for numero
+                        // Busca Conversa ID
                         if(!isNaN(query)) {
                              let convRes = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/conversations/${query}`, { headers: { 'api_access_token': config.cwToken } });
                              if(convRes.ok) {
                                  let convJson = await convRes.json();
                                  contact = convJson.meta.sender;
-                                 // Salva dados da conversa (COM CORREÇÃO DE DATA)
                                  document.getElementById('dealChatId').value = convJson.id;
-                                 if(convJson.created_at) {
-                                    // Converte segundos unix para data ISO
-                                    document.getElementById('conversationStart').value = new Date(convJson.created_at * 1000).toISOString();
-                                 }
+                                 if(convJson.created_at) document.getElementById('conversationStart').value = new Date(convJson.created_at * 1000).toISOString();
                                  document.getElementById('dealChannel').value = convJson.meta.channel || 'api';
                              }
                         }
@@ -262,14 +260,10 @@
                         document.getElementById('dealEmail').value = contact.email || '';
                         document.getElementById('dealPhone').value = contact.phone_number || query;
                         
-                        // Tenta achar a empresa
-                        if(contact.additional_attributes && contact.additional_attributes.company_name) {
-                            document.getElementById('dealCompany').value = contact.additional_attributes.company_name;
-                        } else if (contact.company) {
-                             document.getElementById('dealCompany').value = contact.company.name;
-                        }
+                        if(contact.additional_attributes?.company_name) document.getElementById('dealCompany').value = contact.additional_attributes.company_name;
+                        else if (contact.company) document.getElementById('dealCompany').value = contact.company.name;
 
-                        // Se achou contato mas não conversa, tenta buscar a última conversa dele
+                        // Busca conversa se faltar
                         if(!document.getElementById('dealChatId').value) {
                              let convsRes = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/${contact.id}/conversations`, { headers: { 'api_access_token': config.cwToken } });
                              let convsJson = await convsRes.json();
@@ -277,22 +271,16 @@
                                  const lastConv = convsJson.payload[0];
                                  document.getElementById('dealChatId').value = lastConv.id;
                                  document.getElementById('dealChannel').value = lastConv.meta.channel;
-                                 if(lastConv.created_at) {
-                                    // Converte segundos unix para data ISO (CORREÇÃO AQUI TAMBEM)
-                                    document.getElementById('conversationStart').value = new Date(lastConv.created_at * 1000).toISOString();
-                                 }
+                                 if(lastConv.created_at) document.getElementById('conversationStart').value = new Date(lastConv.created_at * 1000).toISOString();
                              }
                         }
                         
                         btn.className = "px-4 bg-green-600 text-white rounded-lg font-medium shadow-sm flex items-center gap-2";
                         btn.innerHTML = '<i class="fa-solid fa-check"></i> Encontrado!';
-                        setTimeout(() => {
-                            btn.className = "px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition shadow-sm flex items-center gap-2";
-                            btn.innerHTML = originalText; 
-                        }, 2000);
+                        setTimeout(() => { btn.className = "px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition shadow-sm flex items-center gap-2"; btn.innerHTML = originalText; }, 2000);
 
                     } else {
-                        alert("Nada encontrado no Chatwoot com esse dado.");
+                        alert("Nada encontrado. Preencha os dados e salvaremos um novo contato.");
                         btn.innerHTML = originalText;
                     }
 
@@ -300,6 +288,44 @@
                     console.error(e);
                     alert("Erro na busca: " + e.message);
                     btn.innerHTML = originalText;
+                }
+            },
+
+            // --- CRIA CONTATO NO CHATWOOT SE NÃO EXISTIR ---
+            createChatwootContact: async (deal) => {
+                if(!config.cwUrl || !config.cwToken) return;
+                console.log("Tentando criar contato no Chatwoot...");
+                
+                try {
+                    const body = {
+                        name: deal.title,
+                        email: deal.email,
+                        phone_number: deal.phone,
+                        company_name: deal.company
+                    };
+                    
+                    const res = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts`, {
+                        method: 'POST',
+                        headers: { 
+                            'api_access_token': config.cwToken,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    });
+
+                    if(res.ok) {
+                        console.log("✅ Contato criado no Chatwoot!");
+                        const json = await res.json();
+                        // Aqui poderíamos salvar o ID do contato no Supabase se tivéssemos a coluna
+                        // Mas o principal é que ele agora existe lá para futuras conversas
+                        alert(`Contato ${deal.title} criado no Chatwoot com sucesso!`);
+                    } else {
+                        const err = await res.json();
+                        console.warn("Contato já existe ou erro:", err);
+                        // Não damos alert de erro aqui para não travar o fluxo, pois pode ser duplicado
+                    }
+                } catch(e) {
+                    console.error("Erro ao sincronizar contato:", e);
                 }
             },
 
@@ -321,6 +347,11 @@
                     conversation_start: document.getElementById('conversationStart').value || null,
                     notes: document.getElementById('dealNotes').value,
                 };
+
+                // Se for novo e tiver telefone/email, cria no Chatwoot
+                if (!id && (deal.phone || deal.email)) {
+                    await window.app.createChatwootContact(deal);
+                }
 
                 let error;
                 if (id) {
@@ -358,11 +389,11 @@
                 const { data } = await window.supabaseClient.from('deals').select('*');
                 if(!data || data.length === 0) return alert("Nada para exportar.");
                 
-                let csv = 'ID,Cliente,Empresa,Email,Telefone,Valor,Etapa,Canal,Data Reuniao,Chat ID\n';
+                let csv = 'ID,Cliente,Empresa,Email,Telefone,Valor,Etapa,Canal,Data Reuniao,Prev. Fechamento,Chat ID\n';
                 data.forEach(row => {
                     const safeTitle = (row.title || '').replace(/"/g, '""');
                     const safeCompany = (row.company || '').replace(/"/g, '""');
-                    csv += `${row.id},"${safeTitle}","${safeCompany}","${row.email}","${row.phone}",${row.value},${row.stage},${row.channel},${row.meeting_date},${row.chatwoot_id}\n`;
+                    csv += `${row.id},"${safeTitle}","${safeCompany}","${row.email}","${row.phone}",${row.value},${row.stage},${row.channel},${row.meeting_date},${row.closing_date},${row.chatwoot_id}\n`;
                 });
 
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -432,8 +463,8 @@
                 if(deal.channel) {
                     let iconClass = 'fa-globe';
                     let bgClass = 'channel-icon api';
-                    if(deal.channel.includes('whatsapp')) { iconClass = 'fa-whatsapp'; bgClass = 'channel-icon whatsapp'; }
-                    else if(deal.channel.includes('email')) { iconClass = 'fa-envelope'; bgClass = 'channel-icon email'; }
+                    if(deal.channel.toLowerCase().includes('whatsapp')) { iconClass = 'fa-whatsapp'; bgClass = 'channel-icon whatsapp'; }
+                    else if(deal.channel.toLowerCase().includes('email')) { iconClass = 'fa-envelope'; bgClass = 'channel-icon email'; }
                     
                     channelIcon = `<span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${bgClass}"><i class="fa-brands ${iconClass}"></i></span>`;
                 }
@@ -449,16 +480,24 @@
                     ? `<a href="${config.cwUrl}/app/accounts/${config.cwAccount}/conversations/${deal.chatwoot_id}" target="_blank" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 flex items-center gap-1 font-medium" onclick="event.stopPropagation()">
                         <i class="fa-regular fa-comments"></i> Abrir Chat
                        </a>` : '';
+                
+                // Badge de Fechamento
+                const closingBadge = deal.closing_date 
+                    ? `<div class="text-[10px] bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100 flex items-center gap-1 ml-auto"><i class="fa-solid fa-flag-checkered"></i> ${new Date(deal.closing_date).toLocaleDateString().slice(0,5)}</div>` 
+                    : '';
 
                 el.innerHTML = `
                     <div class="flex justify-between items-start mb-2">
-                        <div class="flex gap-2">${channelIcon} <span class="text-[10px] font-bold text-gray-400 uppercase">${deal.company || 'Particular'}</span></div>
+                        <div class="flex gap-2">${channelIcon} <span class="text-[10px] font-bold text-gray-400 uppercase truncate max-w-[120px]">${deal.company || 'Particular'}</span></div>
                         <span class="text-[10px] text-gray-300">${date}</span>
                     </div>
                     <h4 class="font-bold text-gray-800 text-sm mb-1 truncate">${deal.title}</h4>
                     <p class="font-mono text-xs text-gray-600 font-medium mb-3">${val}</p>
                     
-                    ${deal.meeting_date ? `<div class="mb-2 text-[10px] bg-yellow-50 text-yellow-700 px-2 py-1 rounded border border-yellow-100 flex items-center gap-1"><i class="fa-regular fa-calendar"></i> Reunião: ${new Date(deal.meeting_date).toLocaleDateString()}</div>` : ''}
+                    <div class="flex flex-wrap gap-2 mb-2">
+                        ${deal.meeting_date ? `<div class="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-1 rounded border border-yellow-100 flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${new Date(deal.meeting_date).toLocaleDateString().slice(0,5)}</div>` : ''}
+                        ${closingBadge}
+                    </div>
 
                     <div class="flex justify-between items-center border-t pt-2 mt-2">
                         ${chatLink}
