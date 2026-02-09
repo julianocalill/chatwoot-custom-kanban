@@ -1,45 +1,56 @@
 (function() {
-    console.log('🚀 Chatwoot Kanban: Iniciando...');
+    console.log('🚀 Chatwoot Kanban: Iniciando script de Abas...');
 
-    const KANBAN_ID = 'cw-custom-kanban-overlay';
-    
-    // Configurações básicas
-    // Tenta pegar o ID da conta da URL ou do objeto window (varia conforme a versão do Chatwoot)
+    const KANBAN_OVERLAY_ID = 'cw-custom-kanban-overlay';
+    const KANBAN_TAB_ID = 'cw-custom-kanban-tab';
+
+    // --------------------------------------------------------
+    // 1. Lógica de Dados (API) - CORRIGIDA
+    // --------------------------------------------------------
     function getAccountId() {
-        // Tenta pegar da URL atual (ex: /app/accounts/1/...)
         const urlParts = window.location.pathname.split('/');
         const accountIndex = urlParts.indexOf('accounts');
         if (accountIndex > -1 && urlParts[accountIndex + 1]) {
             return urlParts[accountIndex + 1];
         }
-        return 1; // Fallback
+        return 1; 
     }
 
-    // Função para buscar conversas da API
     async function fetchConversations(status) {
         const accountId = getAccountId();
         try {
             const response = await fetch(`/api/v1/accounts/${accountId}/conversations?status=${status}`);
-            const data = await response.json();
-            return data.data.payload || [];
+            const json = await response.json();
+            
+            // Correção do erro de leitura da API
+            // Tenta achar o payload em diferentes estruturas possíveis
+            const conversations = json.data?.payload || json.payload || [];
+            console.log(`✅ ${conversations.length} conversas carregadas.`);
+            return conversations;
         } catch (error) {
-            console.error('Erro ao buscar conversas:', error);
+            console.error('❌ Erro ao buscar conversas:', error);
             return [];
         }
     }
 
-    // Renderiza um Card de conversa
+    // --------------------------------------------------------
+    // 2. Lógica Visual (O Quadro)
+    // --------------------------------------------------------
     function createCard(conversation) {
         const card = document.createElement('div');
         card.className = 'kanban-card';
-        // Redireciona para a conversa ao clicar
         card.onclick = () => {
+            // Fecha o Kanban e vai para a conversa
+            document.getElementById(KANBAN_OVERLAY_ID).style.display = 'none';
             window.location.href = `/app/accounts/${getAccountId()}/conversations/${conversation.id}`;
         };
 
         const meta = conversation.meta || {};
         const sender = meta.sender || {};
-        
+        const lastMsg = conversation.messages && conversation.messages.length > 0 
+            ? conversation.messages[0].content 
+            : 'Sem mensagens';
+
         card.innerHTML = `
             <div class="card-header">
                 <strong>#${conversation.id}</strong>
@@ -47,102 +58,110 @@
             </div>
             <div class="card-body">
                 <div class="sender-name">${sender.name || 'Visitante'}</div>
-                <div class="last-message">${conversation.messages && conversation.messages.length > 0 ? conversation.messages[0].content.substring(0, 50) + '...' : 'Sem mensagens'}</div>
+                <div class="last-message">${lastMsg.substring(0, 50)}</div>
             </div>
         `;
         return card;
     }
 
-    // Constrói o quadro Kanban
     async function buildBoard() {
         const board = document.getElementById('kanban-board-content');
-        board.innerHTML = '<p style="padding:20px">Carregando conversas...</p>';
+        if(!board) return;
+        
+        board.innerHTML = '<p style="padding:20px; color: #666;">Carregando suas conversas...</p>';
 
-        // Busca conversas (Status Open)
         const openConversations = await fetchConversations('open');
         
-        // Limpa
-        board.innerHTML = '';
+        board.innerHTML = ''; // Limpa loading
 
-        // Cria Coluna "Abertos"
+        // Coluna Abertos
         const colOpen = document.createElement('div');
         colOpen.className = 'kanban-column';
         colOpen.innerHTML = `<h3>🔥 Abertos (${openConversations.length})</h3>`;
         const listOpen = document.createElement('div');
         listOpen.className = 'kanban-list';
         
-        openConversations.forEach(conv => {
-            listOpen.appendChild(createCard(conv));
-        });
+        openConversations.forEach(conv => listOpen.appendChild(createCard(conv)));
         colOpen.appendChild(listOpen);
         board.appendChild(colOpen);
 
-        // Cria Coluna Exemplo "Em Atendimento" (Placeholder visual)
+        // Coluna Exemplo
         const colProg = document.createElement('div');
         colProg.className = 'kanban-column';
-        colProg.innerHTML = `<h3>👨‍💻 Em Atendimento (Exemplo)</h3><div class="kanban-list"></div>`;
+        colProg.innerHTML = `<h3>✅ Resolvidos (Exemplo)</h3><div class="kanban-list"></div>`;
         board.appendChild(colProg);
     }
 
-    // Cria a Interface do Modal
     function createKanbanInterface() {
-        if (document.getElementById(KANBAN_ID)) return;
+        if (document.getElementById(KANBAN_OVERLAY_ID)) return;
 
         const overlay = document.createElement('div');
-        overlay.id = KANBAN_ID;
+        overlay.id = KANBAN_OVERLAY_ID;
         overlay.className = 'kanban-overlay';
-        overlay.style.display = 'none'; // Começa oculto
+        overlay.style.display = 'none';
 
         overlay.innerHTML = `
             <div class="kanban-header">
-                <h2>Meu Pipeline de Vendas</h2>
-                <button id="close-kanban">X Fechar</button>
+                <h2>Pipeline de Atendimento</h2>
+                <button id="close-kanban">Voltar para Mensagens</button>
             </div>
-            <div class="kanban-board" id="kanban-board-content">
-                </div>
+            <div class="kanban-board" id="kanban-board-content"></div>
         `;
 
         document.body.appendChild(overlay);
 
-        // Evento Fechar
         document.getElementById('close-kanban').onclick = () => {
             overlay.style.display = 'none';
         };
-
-        return overlay;
     }
 
-    // Adiciona o botão na barra lateral
-    function injectButton() {
-        // Tenta achar a sidebar (depende da versão do chatwoot, pode variar o seletor)
-        const sidebar = document.querySelector('.secondary-menu') || document.querySelector('aside'); 
+    // --------------------------------------------------------
+    // 3. O Injetor de Abas (A Mágica)
+    // --------------------------------------------------------
+    function injectTab() {
+        // Procura a lista de abas dentro do cabeçalho da conversa
+        // O seletor depende da estrutura exata, geralmente é uma UL dentro de .conversation-header ou .panel
+        const tabContainer = document.querySelector('.conversation--header ul') 
+                          || document.querySelector('.tabs ul')
+                          || document.querySelector('ul.tabs');
+
+        // Se não achou a aba, ou se o botão já existe, para.
+        if (!tabContainer || document.getElementById(KANBAN_TAB_ID)) return;
+
+        console.log('🎯 Container de abas encontrado! Injetando Kanban...');
+
+        const li = document.createElement('li');
+        li.className = 'tabs-title'; // Classe nativa do Chatwoot (tentativa)
         
-        if (sidebar && !document.getElementById('btn-open-kanban')) {
-            const btn = document.createElement('a');
-            btn.id = 'btn-open-kanban';
-            btn.innerHTML = '<span class="icon">📊</span><span class="label">Kanban</span>';
-            btn.className = 'menu-item';
-            btn.style.cursor = 'pointer';
-            btn.style.display = 'flex';
-            btn.style.alignItems = 'center';
-            btn.style.padding = '10px';
-            btn.style.color = 'var(--s-500)';
-            btn.style.fontWeight = '500';
+        const btn = document.createElement('a');
+        btn.id = KANBAN_TAB_ID;
+        btn.innerText = 'Kanban';
+        btn.style.cursor = 'pointer';
+        // Estilo básico para parecer uma aba
+        btn.style.padding = '1rem'; 
+        btn.style.display = 'inline-block';
+        btn.style.fontWeight = '500';
+        btn.style.color = 'var(--s-700)';
+        
+        // Efeito Hover simples
+        btn.onmouseover = () => btn.style.color = 'var(--w-500)';
+        btn.onmouseout = () => btn.style.color = 'var(--s-700)';
 
-            btn.onclick = async (e) => {
-                e.preventDefault();
-                createKanbanInterface();
-                const overlay = document.getElementById(KANBAN_ID);
-                overlay.style.display = 'flex';
-                await buildBoard();
-            };
+        btn.onclick = async (e) => {
+            e.preventDefault();
+            createKanbanInterface();
+            const overlay = document.getElementById(KANBAN_OVERLAY_ID);
+            overlay.style.display = 'flex';
+            await buildBoard();
+        };
 
-            // Insere no topo ou fim da sidebar
-            sidebar.insertBefore(btn, sidebar.firstChild);
-        }
+        li.appendChild(btn);
+        
+        // Insere a aba. Tenta inserir depois do Woofed, se não, no final.
+        tabContainer.appendChild(li);
     }
 
-    // Observador para garantir que o botão seja reinserido se a página mudar (SPA)
-    setInterval(injectButton, 2000);
+    // Roda repetidamente para garantir que a aba apareça quando você troca de conversa
+    setInterval(injectTab, 1000);
 
 })();
