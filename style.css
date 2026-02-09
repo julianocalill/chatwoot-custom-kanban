@@ -1,18 +1,17 @@
-/* Fundo Escuro do Modal */
+/* Fundo total para focar no Kanban */
 .kanban-overlay {
     position: fixed;
     top: 0;
-    left: 0;
-    width: 100vw;
+    left: 0; /* Cobre a tela toda, mas você pode mudar 'left' para '250px' se quiser ver o menu lateral ainda */
+    width: 100%;
     height: 100vh;
     background: #f4f6fb;
-    z-index: 9999;
+    z-index: 99999; /* Z-index altíssimo para ficar por cima de tudo */
     display: flex;
     flex-direction: column;
-    font-family: 'Inter', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Cabeçalho */
 .kanban-header {
     height: 60px;
     background: white;
@@ -20,97 +19,99 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
+    padding: 0 24px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .kanban-header h2 {
-    margin: 0;
+    font-size: 18px;
     color: #1f2937;
-    font-size: 1.2rem;
+    margin: 0;
 }
 
 #close-kanban {
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 8px 16px;
+    background: white;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    padding: 6px 16px;
     border-radius: 4px;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
-/* Área das Colunas */
+#close-kanban:hover {
+    background: #ef4444;
+    color: white;
+}
+
 .kanban-board {
     flex: 1;
     display: flex;
     overflow-x: auto;
-    padding: 20px;
-    gap: 20px;
+    padding: 24px;
+    gap: 24px;
 }
 
-/* Coluna Individual */
 .kanban-column {
-    min-width: 300px;
-    max-width: 300px;
-    background: #eef2f6;
+    min-width: 320px;
+    max-width: 320px;
+    background: #f3f4f6;
     border-radius: 8px;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    max-height: calc(100vh - 100px);
+    max-height: 100%;
 }
 
 .kanban-column h3 {
-    padding: 15px;
+    padding: 16px;
     margin: 0;
-    font-size: 1rem;
-    color: #4b5563;
-    border-bottom: 2px solid #d1d5db;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
 }
 
-/* Lista de Cards */
 .kanban-list {
-    padding: 10px;
+    padding: 12px;
     overflow-y: auto;
-    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
-/* Card da Conversa */
 .kanban-card {
     background: white;
     border-radius: 6px;
     padding: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    border-left: 4px solid #3b82f6; /* Cor azul lateral */
+    border-left: 3px solid #10b981; /* Verde Chatwoot */
 }
 
 .kanban-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
     display: flex;
     justify-content: space-between;
-    font-size: 0.8rem;
+    font-size: 11px;
     color: #9ca3af;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
 }
 
 .sender-name {
-    font-weight: bold;
+    font-weight: 600;
     color: #111827;
+    font-size: 14px;
     margin-bottom: 4px;
 }
 
 .last-message {
-    font-size: 0.9rem;
-    color: #6b7280;
+    font-size: 13px;
+    color: #4b5563;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
