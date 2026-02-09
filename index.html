@@ -3,282 +3,361 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatwoot Kanban</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <title>CRM BeMore</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #F4F6F8; }
-        .kanban-col { min-height: 80vh; }
-        .ghost { opacity: 0.5; background: #c8ebfb; }
-        /* Scrollbar fina */
+        body { font-family: 'Inter', sans-serif; background: #f3f4f6; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .ghost-card { background: #eff6ff; border: 2px dashed #3b82f6; opacity: 0.5; }
+        .deal-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
+<body class="h-screen flex flex-col overflow-hidden text-sm text-gray-700">
 
-    <div class="bg-white border-b px-4 py-3 flex justify-between items-center shadow-sm z-10">
-        <div class="flex items-center gap-2">
-            <h1 class="font-bold text-gray-700 text-lg">🚀 Pipeline</h1>
-            <select id="funnelSelector" class="border rounded px-2 py-1 text-sm bg-gray-50" onchange="loadFunnel()">
-                </select>
-        </div>
-        <button onclick="toggleSettings()" class="text-gray-500 hover:text-blue-600">
-            ⚙️ Configurar
-        </button>
-    </div>
-
-    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl w-96 p-6">
-            <h2 class="text-xl font-bold mb-4">Configurações</h2>
-            
-            <label class="block text-sm font-medium text-gray-700">Chatwoot URL (sem a barra final)</label>
-            <input type="text" id="cwUrl" placeholder="https://chat.suaempresa.com" class="w-full border rounded p-2 mb-3">
-            
-            <label class="block text-sm font-medium text-gray-700">Token de Acesso (User API Token)</label>
-            <input type="password" id="cwToken" class="w-full border rounded p-2 mb-3">
-            
-            <label class="block text-sm font-medium text-gray-700">ID da Conta</label>
-            <input type="number" id="cwAccount" class="w-full border rounded p-2 mb-4">
-
-            <hr class="my-4">
-            
-            <h3 class="font-bold text-sm mb-2">Configurar Funis (JSON)</h3>
-            <textarea id="jsonConfig" class="w-full border rounded p-2 text-xs h-32 font-mono" placeholder='{"Vendas": ["novo", "negociando"], "Suporte": ["aberto", "pendente"]}'></textarea>
-            <p class="text-xs text-gray-500 mt-1">Defina o nome do funil e as etiquetas de cada coluna.</p>
-
-            <div class="flex justify-end gap-2 mt-4">
-                <button onclick="toggleSettings()" class="px-4 py-2 text-gray-600">Cancelar</button>
-                <button onclick="saveSettings()" class="px-4 py-2 bg-blue-600 text-white rounded">Salvar</button>
+    <div class="bg-white border-b px-6 py-3 flex justify-between items-center shadow-sm z-20">
+        <div class="flex items-center gap-4">
+            <h1 class="font-bold text-xl text-gray-800 tracking-tight">🚀 BeMore CRM</h1>
+            <div id="total-pipeline" class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold border border-green-200">
+                Pipeline: R$ 0,00
             </div>
         </div>
+        <div class="flex gap-2">
+             <button onclick="app.exportCSV()" class="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 transition">
+                📥 Exportar
+            </button>
+            <button onclick="ui.openModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium shadow-sm transition">
+                + Novo Negócio
+            </button>
+            <button onclick="ui.toggleSettings()" class="p-2 text-gray-400 hover:text-gray-600">⚙️</button>
+        </div>
     </div>
 
-    <div id="board" class="flex-1 overflow-x-auto overflow-y-hidden flex p-4 gap-4">
+    <div id="board" class="flex-1 overflow-x-auto overflow-y-hidden flex p-6 gap-6 items-start">
         </div>
 
+    <div id="dealModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-[500px] p-6 transform transition-all scale-100">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800" id="modalTitle">Novo Negócio</h2>
+                <button onclick="ui.closeModal()" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
+            </div>
+            
+            <form id="dealForm" onsubmit="app.saveDeal(event)">
+                <input type="hidden" id="dealId">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Título do Negócio / Cliente</label>
+                        <input type="text" id="dealTitle" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Contrato Empresa X">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Valor (R$)</label>
+                            <input type="number" id="dealValue" step="0.01" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Prioridade</label>
+                            <select id="dealPriority" class="w-full border border-gray-300 rounded-lg p-2.5 bg-white">
+                                <option value="low">🟢 Baixa</option>
+                                <option value="medium" selected>🟡 Média</option>
+                                <option value="high">🔴 Alta</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">ID da Conversa (Chatwoot)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="dealChatId" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Opcional: ID numérico">
+                            <button type="button" onclick="app.fetchChatInfo()" class="px-3 bg-gray-100 border rounded-lg hover:bg-gray-200" title="Testar ID">🔍</button>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-1">Se preenchido, abre o chat ao clicar no card.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Notas</label>
+                        <textarea id="dealNotes" rows="3" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-end gap-3">
+                    <button type="button" onclick="app.archiveDeal()" id="btnArchive" class="hidden px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg font-medium">Arquivar (Perdido/Ganho)</button>
+                    <button type="button" onclick="ui.closeModal()" class="px-5 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium">Cancelar</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transform active:scale-95 transition">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg w-96 p-6">
+            <h2 class="font-bold text-lg mb-4">Configuração do Sistema</h2>
+            <div class="space-y-3">
+                <input type="text" id="sbUrl" placeholder="Supabase URL (https://...)" class="w-full border p-2 rounded text-xs">
+                <input type="password" id="sbKey" placeholder="Supabase Anon Key" class="w-full border p-2 rounded text-xs">
+                <hr>
+                <input type="text" id="cwUrl" placeholder="Chatwoot URL" class="w-full border p-2 rounded text-xs">
+            </div>
+            <button onclick="app.saveSettings()" class="w-full mt-4 bg-blue-600 text-white py-2 rounded font-bold">Salvar Conexão</button>
+        </div>
+    </div>
+
     <script>
-        // --- 1. Estado da Aplicação ---
-        let config = {
-            url: localStorage.getItem('cw_url') || '',
-            token: localStorage.getItem('cw_token') || '',
-            accountId: localStorage.getItem('cw_account') || '',
-            pipelines: JSON.parse(localStorage.getItem('cw_pipelines') || '{"Vendas": ["prospeccao", "negociacao", "fechado"], "Suporte": ["duvida", "resolvido"]}')
+        // --- LÓGICA DO CRM ---
+        let supabase;
+        
+        const config = {
+            stages: {
+                'prospeccao': { title: '🔎 Prospecção', color: 'border-blue-500' },
+                'qualificacao': { title: '💬 Qualificação', color: 'border-yellow-500' },
+                'proposta': { title: '📄 Proposta Enviada', color: 'border-orange-500' },
+                'negociacao': { title: '🤝 Negociação', color: 'border-purple-500' },
+                'fechamento': { title: '💰 Fechamento', color: 'border-green-500' }
+            },
+            sbUrl: localStorage.getItem('crm_sb_url'),
+            sbKey: localStorage.getItem('crm_sb_key'),
+            cwUrl: localStorage.getItem('crm_cw_url') || 'https://chat.bemore.ia.br'
         };
 
-        // --- 2. Inicialização ---
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!config.url || !config.token) {
-                toggleSettings(); // Abre config se não tiver dados
-            } else {
-                initApp();
-            }
-        });
-
-        function initApp() {
-            renderFunnelSelector();
-            loadFunnel();
-        }
-
-        // --- 3. Renderização ---
-        function renderFunnelSelector() {
-            const select = document.getElementById('funnelSelector');
-            select.innerHTML = '';
-            Object.keys(config.pipelines).forEach(key => {
-                const opt = document.createElement('option');
-                opt.value = key;
-                opt.innerText = key;
-                select.appendChild(opt);
-            });
-        }
-
-        async function loadFunnel() {
-            const board = document.getElementById('board');
-            const selectedFunnel = document.getElementById('funnelSelector').value;
-            const stages = config.pipelines[selectedFunnel];
-
-            board.innerHTML = '<div class="text-gray-500 p-4">Carregando colunas...</div>';
-            
-            // Busca conversas do Chatwoot
-            const conversations = await fetchConversations();
-            
-            board.innerHTML = ''; // Limpa
-
-            stages.forEach(tag => {
-                // Cria a Coluna
-                const col = document.createElement('div');
-                col.className = 'flex flex-col min-w-[300px] w-[300px] bg-gray-100 rounded-lg h-full border border-gray-200';
-                col.setAttribute('data-tag', tag);
-
-                // Cabeçalho da Coluna
-                col.innerHTML = `
-                    <div class="p-3 font-semibold text-gray-700 uppercase text-xs flex justify-between border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                        <span>🏷️ ${tag.replace('_', ' ')}</span>
-                        <span class="count bg-gray-200 px-2 rounded-full text-gray-600">0</span>
-                    </div>
-                    <div class="kanban-list flex-1 p-2 overflow-y-auto space-y-2 custom-scrollbar" id="list-${tag}">
-                        </div>
-                `;
+        const app = {
+            init: async () => {
+                if (!config.sbUrl || !config.sbKey) {
+                    ui.toggleSettings();
+                    return;
+                }
+                // Inicializa Supabase
+                supabase = window.supabase.createClient(config.sbUrl, config.sbKey);
                 
-                board.appendChild(col);
-
-                // Filtrar conversas que tem ESSA tag
-                const list = col.querySelector('.kanban-list');
-                const filtered = conversations.filter(c => c.labels && c.labels.includes(tag));
+                // Desenha colunas
+                ui.renderBoard();
                 
-                // Atualiza contador
-                col.querySelector('.count').innerText = filtered.length;
+                // Carrega dados
+                await app.loadDeals();
+            },
 
-                // Renderiza Cards
-                filtered.forEach(c => list.appendChild(createCardElement(c)));
+            loadDeals: async () => {
+                const { data, error } = await supabase
+                    .from('deals')
+                    .select('*')
+                    .neq('status', 'archived') // Não mostra os arquivados no board
+                    .order('created_at', { ascending: false });
 
-                // Ativa Drag & Drop na lista
-                new Sortable(list, {
-                    group: 'shared', // Permite mover entre listas
-                    animation: 150,
-                    ghostClass: 'ghost',
-                    onEnd: async function (evt) {
-                        const itemEl = evt.item;
-                        const newCol = evt.to.closest('[data-tag]');
-                        const oldCol = evt.from.closest('[data-tag]');
-                        
-                        if (newCol === oldCol) return; // Não mudou de coluna
+                if (error) {
+                    alert('Erro ao carregar: ' + error.message);
+                    return;
+                }
 
-                        const conversationId = itemEl.getAttribute('data-id');
-                        const newTag = newCol.getAttribute('data-tag');
-                        const oldTag = oldCol.getAttribute('data-tag');
+                // Limpa listas
+                document.querySelectorAll('.kanban-list').forEach(el => el.innerHTML = '');
+                
+                let total = 0;
 
-                        // Atualiza visualmente o contador
-                        updateCounts();
-
-                        // Chama API para trocar etiqueta
-                        await moveCard(conversationId, oldTag, newTag);
+                data.forEach(deal => {
+                    const col = document.getElementById(`col-${deal.stage}`);
+                    if (col) {
+                        col.appendChild(ui.createCard(deal));
+                        total += parseFloat(deal.value || 0);
                     }
                 });
-            });
-        }
 
-        function createCardElement(c) {
-            const el = document.createElement('div');
-            el.className = 'bg-white p-3 rounded shadow-sm border border-gray-200 cursor-grab hover:shadow-md transition-shadow';
-            el.setAttribute('data-id', c.id);
+                document.getElementById('total-pipeline').innerText = `Pipeline: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total)}`;
+                ui.updateCounts();
+            },
+
+            saveDeal: async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('dealId').value;
+                const deal = {
+                    title: document.getElementById('dealTitle').value,
+                    value: document.getElementById('dealValue').value || 0,
+                    priority: document.getElementById('dealPriority').value,
+                    chatwoot_id: document.getElementById('dealChatId').value,
+                    notes: document.getElementById('dealNotes').value,
+                };
+
+                let error;
+                if (id) {
+                    // Update
+                    const res = await supabase.from('deals').update(deal).eq('id', id);
+                    error = res.error;
+                } else {
+                    // Insert
+                    const res = await supabase.from('deals').insert([{ ...deal, stage: 'prospeccao' }]);
+                    error = res.error;
+                }
+
+                if (error) alert('Erro ao salvar: ' + error.message);
+                else {
+                    ui.closeModal();
+                    app.loadDeals();
+                }
+            },
+
+            moveDeal: async (id, newStage) => {
+                await supabase.from('deals').update({ stage: newStage }).eq('id', id);
+                app.loadDeals(); // Recarrega para atualizar totais
+            },
+
+            saveSettings: () => {
+                localStorage.setItem('crm_sb_url', document.getElementById('sbUrl').value);
+                localStorage.setItem('crm_sb_key', document.getElementById('sbKey').value);
+                localStorage.setItem('crm_cw_url', document.getElementById('cwUrl').value);
+                location.reload();
+            },
+
+            exportCSV: async () => {
+                const { data } = await supabase.from('deals').select('*');
+                if(!data) return;
+                
+                let csv = 'ID,Data,Titulo,Valor,Etapa,Status,Chatwoot ID,Notas\n';
+                data.forEach(row => {
+                    csv += `${row.id},${row.created_at},"${row.title}",${row.value},${row.stage},${row.status},${row.chatwoot_id || ''},"${row.notes || ''}"\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `crm_export_${new Date().toISOString().slice(0,10)}.csv`;
+                a.click();
+            },
             
-            const sender = c.meta.sender || {};
-            const lastMsg = c.messages[0] ? c.messages[0].content : '';
-
-            el.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                    <span class="font-bold text-sm text-gray-800">${sender.name || 'Visitante'}</span>
-                    <span class="text-[10px] text-gray-400">#${c.id}</span>
-                </div>
-                <p class="text-xs text-gray-500 line-clamp-2 mb-2">${lastMsg}</p>
-                <div class="flex justify-end">
-                    <a href="${config.url}/app/accounts/${config.accountId}/conversations/${c.id}" target="_blank" class="text-[10px] text-blue-500 hover:underline">Abrir ↗</a>
-                </div>
-            `;
-            return el;
-        }
-
-        function updateCounts() {
-            document.querySelectorAll('[data-tag]').forEach(col => {
-                const count = col.querySelector('.kanban-list').children.length;
-                col.querySelector('.count').innerText = count;
-            });
-        }
-
-        // --- 4. Integração com API Chatwoot ---
-        
-        async function fetchConversations() {
-            try {
-                // Pega conversas abertas
-                const res = await fetch(`${config.url}/api/v1/accounts/${config.accountId}/conversations?status=open`, {
-                    headers: { 'api_access_token': config.token }
-                });
-                const json = await res.json();
-                return json.data.payload;
-            } catch (e) {
-                console.error(e);
-                alert('Erro ao carregar conversas. Verifique sua URL e Token.');
-                return [];
-            }
-        }
-
-        async function moveCard(convId, oldTag, newTag) {
-            try {
-                // 1. Adiciona nova tag
-                await fetch(`${config.url}/api/v1/accounts/${config.accountId}/conversations/${convId}/labels`, {
-                    method: 'POST',
-                    headers: { 
-                        'api_access_token': config.token,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ labels: [newTag] })
-                });
-
-                // 2. Remove tag antiga (Chatwoot não tem "replace", precisa adicionar uma e tirar a outra)
-                // Pequeno delay para garantir consistência
-                setTimeout(async () => {
-                     // Nota: A API de remover label requer passar a label na URL, não no body, dependendo da versão
-                     // Vou usar a estratégia de atualizar as labels da conversa inteira se necessário, mas o remove é mais seguro
-                     // A rota correta de delete: DELETE /api/v1/accounts/{account_id}/conversations/{conversation_id}/labels/{label}
-                }, 500);
-
-                 // Para simplificar neste MVP, vamos assumir que adicionar a nova já move visualmente. 
-                 // O ideal em produção é chamar o DELETE da tag antiga:
-                 await fetch(`${config.url}/api/v1/accounts/${config.accountId}/conversations/${convId}/labels/${oldTag}`, {
-                    method: 'DELETE',
-                    headers: { 'api_access_token': config.token }
-                });
-
-            } catch (e) {
-                console.error("Erro ao mover card", e);
-                alert('Erro ao sincronizar com Chatwoot');
-            }
-        }
-
-        // --- 5. Lógica de Configurações ---
-        function toggleSettings() {
-            const modal = document.getElementById('settingsModal');
-            if (modal.classList.contains('hidden')) {
-                // Preenche campos
-                document.getElementById('cwUrl').value = config.url;
-                document.getElementById('cwToken').value = config.token;
-                document.getElementById('cwAccount').value = config.accountId;
-                document.getElementById('jsonConfig').value = JSON.stringify(config.pipelines, null, 2);
-                modal.classList.remove('hidden');
-            } else {
-                modal.classList.add('hidden');
-            }
-        }
-
-        function saveSettings() {
-            const url = document.getElementById('cwUrl').value.replace(/\/$/, ""); // Tira barra final
-            const token = document.getElementById('cwToken').value;
-            const account = document.getElementById('cwAccount').value;
-            let pipelines;
-
-            try {
-                pipelines = JSON.parse(document.getElementById('jsonConfig').value);
-            } catch (e) {
-                alert("Erro no formato JSON dos funis.");
-                return;
-            }
-
-            localStorage.setItem('cw_url', url);
-            localStorage.setItem('cw_token', token);
-            localStorage.setItem('cw_account', account);
-            localStorage.setItem('cw_pipelines', JSON.stringify(pipelines));
-
-            config = { url, token, accountId: account, pipelines };
+            archiveDeal: async () => {
+                const id = document.getElementById('dealId').value;
+                if(!id) return;
+                const status = confirm("Marcar como GANHO? (OK = Ganho, Cancelar = Perdido/Arquivar)") ? 'won' : 'lost';
+                
+                await supabase.from('deals').update({ status: 'archived', notes: `[${status.toUpperCase()}] ` + document.getElementById('dealNotes').value }).eq('id', id);
+                ui.closeModal();
+                app.loadDeals();
+            },
             
-            toggleSettings();
-            initApp(); // Recarrega
-        }
+            // Simulação de busca no Chatwoot (para mostrar nome se tiver ID)
+            fetchChatInfo: async () => {
+                const id = document.getElementById('dealChatId').value;
+                if(!id) return;
+                window.open(`${config.cwUrl}/app/accounts/1/conversations/${id}`, '_blank');
+            }
+        };
+
+        const ui = {
+            renderBoard: () => {
+                const board = document.getElementById('board');
+                board.innerHTML = '';
+                Object.entries(config.stages).forEach(([key, info]) => {
+                    const col = document.createElement('div');
+                    col.className = 'flex flex-col w-[320px] min-w-[320px] max-h-full';
+                    col.innerHTML = `
+                        <div class="flex justify-between items-center mb-3 px-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full ${info.color.replace('border', 'bg')}"></span>
+                                <h3 class="font-bold text-gray-700 uppercase text-xs tracking-wider">${info.title}</h3>
+                            </div>
+                            <span class="count bg-white px-2 py-0.5 rounded-full text-[10px] font-bold text-gray-500 shadow-sm border">0</span>
+                        </div>
+                        <div class="kanban-list flex-1 bg-gray-100/50 rounded-xl p-2 space-y-3 overflow-y-auto border border-gray-200/60 custom-scrollbar" id="col-${key}" data-stage="${key}">
+                            </div>
+                    `;
+                    board.appendChild(col);
+
+                    // Drag & Drop
+                    new Sortable(col.querySelector('.kanban-list'), {
+                        group: 'deals',
+                        animation: 150,
+                        ghostClass: 'ghost-card',
+                        onEnd: (evt) => {
+                            const item = evt.item;
+                            const newStage = evt.to.dataset.stage;
+                            const oldStage = evt.from.dataset.stage;
+                            if (newStage !== oldStage) {
+                                app.moveDeal(item.dataset.id, newStage);
+                            }
+                        }
+                    });
+                });
+            },
+
+            createCard: (deal) => {
+                const el = document.createElement('div');
+                el.className = 'deal-card bg-white p-4 rounded-lg shadow-sm border border-gray-100 cursor-pointer transition-all relative group';
+                el.dataset.id = deal.id;
+                el.onclick = (e) => {
+                    if(!e.target.closest('.action-btn')) ui.editDeal(deal);
+                };
+
+                const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(deal.value);
+                const date = new Date(deal.created_at).toLocaleDateString('pt-BR');
+                
+                // Link do Chatwoot se existir
+                const chatLink = deal.chatwoot_id 
+                    ? `<a href="${config.cwUrl}/app/accounts/1/conversations/${deal.chatwoot_id}" target="_blank" class="action-btn text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 flex items-center gap-1">💬 Chat #${deal.chatwoot_id}</a>` 
+                    : '';
+
+                // Badge de prioridade
+                const prioColors = { low: 'bg-green-100 text-green-700', medium: 'bg-yellow-100 text-yellow-700', high: 'bg-red-100 text-red-700' };
+                
+                el.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] ${prioColors[deal.priority]} px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">${deal.priority}</span>
+                        <span class="text-[10px] text-gray-400">${date}</span>
+                    </div>
+                    <h4 class="font-bold text-gray-800 text-sm mb-1 line-clamp-2">${deal.title}</h4>
+                    <p class="font-mono text-xs text-gray-600 font-medium mb-3">${formattedValue}</p>
+                    
+                    <div class="flex justify-between items-center border-t pt-2 mt-2">
+                        ${chatLink}
+                        <span class="text-[10px] text-gray-400">ID: ${deal.id}</span>
+                    </div>
+                `;
+                return el;
+            },
+
+            editDeal: (deal) => {
+                document.getElementById('dealId').value = deal.id;
+                document.getElementById('dealTitle').value = deal.title;
+                document.getElementById('dealValue').value = deal.value;
+                document.getElementById('dealPriority').value = deal.priority;
+                document.getElementById('dealChatId').value = deal.chatwoot_id || '';
+                document.getElementById('dealNotes').value = deal.notes || '';
+                document.getElementById('modalTitle').innerText = 'Editar Negócio';
+                document.getElementById('btnArchive').classList.remove('hidden');
+                
+                document.getElementById('dealModal').classList.remove('hidden');
+            },
+
+            openModal: () => {
+                document.getElementById('dealForm').reset();
+                document.getElementById('dealId').value = '';
+                document.getElementById('modalTitle').innerText = 'Novo Negócio';
+                document.getElementById('btnArchive').classList.add('hidden');
+                document.getElementById('dealModal').classList.remove('hidden');
+            },
+
+            closeModal: () => document.getElementById('dealModal').classList.add('hidden'),
+
+            toggleSettings: () => {
+                const m = document.getElementById('settingsModal');
+                m.classList.toggle('hidden');
+                if(!m.classList.contains('hidden')){
+                    document.getElementById('sbUrl').value = config.sbUrl || '';
+                    document.getElementById('sbKey').value = config.sbKey || '';
+                    document.getElementById('cwUrl').value = config.cwUrl;
+                }
+            },
+            
+            updateCounts: () => {
+                document.querySelectorAll('.kanban-list').forEach(list => {
+                    list.previousElementSibling.querySelector('.count').innerText = list.children.length;
+                });
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', app.init);
     </script>
 </body>
-
 </html>
-
-
-
