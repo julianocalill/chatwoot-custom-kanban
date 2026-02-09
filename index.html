@@ -26,27 +26,28 @@
             </div>
         </div>
         <div class="flex gap-2">
-             <button onclick="app.exportCSV()" class="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 transition">
+             <button onclick="window.app.exportCSV()" class="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 transition">
                 📥 Exportar
             </button>
-            <button onclick="ui.openModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium shadow-sm transition">
+            <button onclick="window.ui.openModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium shadow-sm transition">
                 + Novo Negócio
             </button>
-            <button onclick="ui.toggleSettings()" class="p-2 text-gray-400 hover:text-gray-600">⚙️</button>
+            <button onclick="window.ui.toggleSettings()" class="p-2 text-gray-400 hover:text-gray-600">⚙️</button>
         </div>
     </div>
 
     <div id="board" class="flex-1 overflow-x-auto overflow-y-hidden flex p-6 gap-6 items-start">
-        </div>
+        <div class="m-auto text-gray-400 text-center">Carregando sistema...</div>
+    </div>
 
     <div id="dealModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl w-[500px] p-6 transform transition-all scale-100">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold text-gray-800" id="modalTitle">Novo Negócio</h2>
-                <button onclick="ui.closeModal()" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
+                <button onclick="window.ui.closeModal()" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
             </div>
             
-            <form id="dealForm" onsubmit="app.saveDeal(event)">
+            <form id="dealForm" onsubmit="window.app.saveDeal(event)">
                 <input type="hidden" id="dealId">
                 
                 <div class="space-y-4">
@@ -74,7 +75,7 @@
                         <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">ID da Conversa (Chatwoot)</label>
                         <div class="flex gap-2">
                             <input type="text" id="dealChatId" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Opcional: ID numérico">
-                            <button type="button" onclick="app.fetchChatInfo()" class="px-3 bg-gray-100 border rounded-lg hover:bg-gray-200" title="Testar ID">🔍</button>
+                            <button type="button" onclick="window.app.fetchChatInfo()" class="px-3 bg-gray-100 border rounded-lg hover:bg-gray-200" title="Testar ID">🔍</button>
                         </div>
                         <p class="text-[10px] text-gray-400 mt-1">Se preenchido, abre o chat ao clicar no card.</p>
                     </div>
@@ -86,8 +87,8 @@
                 </div>
 
                 <div class="mt-8 flex justify-end gap-3">
-                    <button type="button" onclick="app.archiveDeal()" id="btnArchive" class="hidden px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg font-medium">Arquivar (Perdido/Ganho)</button>
-                    <button type="button" onclick="ui.closeModal()" class="px-5 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium">Cancelar</button>
+                    <button type="button" onclick="window.app.archiveDeal()" id="btnArchive" class="hidden px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg font-medium">Arquivar</button>
+                    <button type="button" onclick="window.ui.closeModal()" class="px-5 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium">Cancelar</button>
                     <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transform active:scale-95 transition">Salvar</button>
                 </div>
             </form>
@@ -95,25 +96,33 @@
     </div>
 
     <div id="settingsModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg w-96 p-6">
-            <h2 class="font-bold text-lg mb-4">Configuração do Sistema</h2>
+        <div class="bg-white rounded-lg w-96 p-6 shadow-2xl">
+            <h2 class="font-bold text-lg mb-4 text-gray-800">🔌 Conectar ao Supabase</h2>
+            <p class="text-xs text-gray-500 mb-4">Insira as credenciais do seu projeto Supabase para salvar os dados.</p>
+            
             <div class="space-y-3">
-                <input type="text" id="sbUrl" placeholder="Supabase URL (https://...)" class="w-full border p-2 rounded text-xs">
-                <input type="password" id="sbKey" placeholder="Supabase Anon Key" class="w-full border p-2 rounded text-xs">
-                <hr>
-                <input type="text" id="cwUrl" placeholder="Chatwoot URL" class="w-full border p-2 rounded text-xs">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Project URL</label>
+                    <input type="text" id="sbUrl" placeholder="https://xyz.supabase.co" class="w-full border p-2 rounded text-xs bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Anon Public Key</label>
+                    <input type="password" id="sbKey" placeholder="eyJh..." class="w-full border p-2 rounded text-xs bg-gray-50">
+                </div>
+                <hr class="border-gray-100">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Chatwoot URL</label>
+                    <input type="text" id="cwUrl" placeholder="https://chat.suaempresa.com" class="w-full border p-2 rounded text-xs bg-gray-50">
+                </div>
             </div>
-            <button onclick="app.saveSettings()" class="w-full mt-4 bg-blue-600 text-white py-2 rounded font-bold">Salvar Conexão</button>
+            <button onclick="window.app.saveSettings()" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold shadow-md transition">Salvar e Conectar</button>
         </div>
     </div>
 
     <script>
-        // --- BLINDAGEM DO SISTEMA ---
-        // Garante que o app seja global para os botões funcionarem
-        window.app = {};
-        window.ui = {};
+        // --- VARIÁVEIS GLOBAIS (Evita erro de redeclaração) ---
+        window.supabaseClient = null;
         
-        // Configuração inicial segura
         const config = {
             stages: {
                 'prospeccao': { title: '🔎 Prospecção', color: 'border-blue-500' },
@@ -127,74 +136,72 @@
             cwUrl: localStorage.getItem('crm_cw_url') || 'https://chat.bemore.ia.br'
         };
 
-        let supabase = null;
-
         // --- LÓGICA DO APP ---
         window.app = {
             init: async () => {
                 console.log("🚀 Iniciando BeMore CRM...");
                 
-                // Verifica se a biblioteca Supabase carregou
+                // 1. Verifica Biblioteca
                 if (typeof window.supabase === 'undefined') {
-                    console.error("❌ Erro Crítico: A biblioteca do Supabase não carregou.");
-                    alert("Erro de conexão: O sistema de banco de dados não pôde ser carregado. Verifique sua internet ou bloqueadores de anúncio.");
+                    document.getElementById('board').innerHTML = '<div class="m-auto text-red-500">Erro: Biblioteca Supabase não carregou.</div>';
                     return;
                 }
 
-                // Verifica credenciais
+                // 2. Verifica Credenciais
                 if (!config.sbUrl || !config.sbKey) {
-                    console.warn("⚠️ Sem credenciais. Abrindo configurações...");
+                    console.log("⚠️ Sem credenciais. Abrindo configurações...");
                     window.ui.toggleSettings();
+                    document.getElementById('board').innerHTML = '<div class="m-auto text-gray-400">Configure o banco de dados na engrenagem ⚙️</div>';
                     return;
                 }
 
                 try {
-                    // Inicializa Supabase
+                    // 3. Conecta
                     const { createClient } = window.supabase;
-                    supabase = createClient(config.sbUrl, config.sbKey);
-                    console.log("✅ Conexão com Supabase iniciada.");
+                    window.supabaseClient = createClient(config.sbUrl, config.sbKey);
+                    console.log("✅ Cliente Supabase criado.");
                     
-                    // Desenha colunas e carrega dados
+                    // 4. Carrega
                     window.ui.renderBoard();
                     await window.app.loadDeals();
+
                 } catch (e) {
-                    console.error("Erro na inicialização:", e);
-                    alert("Erro ao iniciar sistema: " + e.message);
+                    console.error("Erro Fatal:", e);
+                    alert("Erro ao iniciar: " + e.message);
                 }
             },
 
             loadDeals: async () => {
-                if(!supabase) return;
-                console.log("📥 Buscando negócios...");
+                if(!window.supabaseClient) return;
                 
-                const { data, error } = await supabase
+                const { data, error } = await window.supabaseClient
                     .from('deals')
                     .select('*')
                     .neq('status', 'archived')
                     .order('created_at', { ascending: false });
 
                 if (error) {
-                    console.error("Erro Supabase:", error);
-                    // Se o erro for 401/400, as chaves podem estar erradas
-                    if(error.code === 'PGRST301' || error.message.includes('JWT')) {
-                        alert("Suas credenciais do Supabase parecem inválidas. Verifique a URL e a Key nas configurações.");
+                    console.error("Erro API:", error);
+                    if(error.code === 'PGRST301' || error.message.includes('JWT') || error.code === '401') {
+                        alert("Acesso negado ao Supabase. Verifique se a URL e a KEY estão corretas.");
                         window.ui.toggleSettings();
                     }
                     return;
                 }
 
-                // Limpa listas
+                // Limpa
                 document.querySelectorAll('.kanban-list').forEach(el => el.innerHTML = '');
                 
                 let total = 0;
-
-                data.forEach(deal => {
-                    const col = document.getElementById(`col-${deal.stage}`);
-                    if (col) {
-                        col.appendChild(window.ui.createCard(deal));
-                        total += parseFloat(deal.value || 0);
-                    }
-                });
+                if(data) {
+                    data.forEach(deal => {
+                        const col = document.getElementById(`col-${deal.stage}`);
+                        if (col) {
+                            col.appendChild(window.ui.createCard(deal));
+                            total += parseFloat(deal.value || 0);
+                        }
+                    });
+                }
 
                 document.getElementById('total-pipeline').innerText = `Pipeline: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total)}`;
                 window.ui.updateCounts();
@@ -202,7 +209,7 @@
 
             saveDeal: async (e) => {
                 e.preventDefault();
-                if(!supabase) return;
+                if(!window.supabaseClient) return;
 
                 const id = document.getElementById('dealId').value;
                 const deal = {
@@ -215,10 +222,10 @@
 
                 let error;
                 if (id) {
-                    const res = await supabase.from('deals').update(deal).eq('id', id);
+                    const res = await window.supabaseClient.from('deals').update(deal).eq('id', id);
                     error = res.error;
                 } else {
-                    const res = await supabase.from('deals').insert([{ ...deal, stage: 'prospeccao' }]);
+                    const res = await window.supabaseClient.from('deals').insert([{ ...deal, stage: 'prospeccao' }]);
                     error = res.error;
                 }
 
@@ -230,8 +237,8 @@
             },
 
             moveDeal: async (id, newStage) => {
-                if(!supabase) return;
-                await supabase.from('deals').update({ stage: newStage }).eq('id', id);
+                if(!window.supabaseClient) return;
+                await window.supabaseClient.from('deals').update({ stage: newStage }).eq('id', id);
                 window.app.loadDeals();
             },
 
@@ -240,7 +247,7 @@
                 const key = document.getElementById('sbKey').value.trim();
                 
                 if(!url || !key) {
-                    alert("Por favor, preencha a URL e a Key do Supabase.");
+                    alert("Preencha todos os campos!");
                     return;
                 }
 
@@ -248,24 +255,18 @@
                 localStorage.setItem('crm_sb_key', key);
                 localStorage.setItem('crm_cw_url', document.getElementById('cwUrl').value);
                 
-                alert("Configurações salvas! A página será recarregada.");
                 location.reload();
             },
 
             exportCSV: async () => {
-                if(!supabase) return;
-                const { data } = await supabase.from('deals').select('*');
-                if(!data || data.length === 0) {
-                    alert("Nenhum dado para exportar.");
-                    return;
-                }
+                if(!window.supabaseClient) return;
+                const { data } = await window.supabaseClient.from('deals').select('*');
+                if(!data || data.length === 0) return alert("Nada para exportar.");
                 
                 let csv = 'ID,Data,Titulo,Valor,Etapa,Status,Chatwoot ID,Notas\n';
                 data.forEach(row => {
-                    // Trata aspas e quebras de linha nas notas para não quebrar o CSV
                     const safeNotes = (row.notes || '').replace(/"/g, '""').replace(/\n/g, ' ');
                     const safeTitle = (row.title || '').replace(/"/g, '""');
-                    
                     csv += `${row.id},${row.created_at},"${safeTitle}",${row.value},${row.stage},${row.status},${row.chatwoot_id || ''},"${safeNotes}"\n`;
                 });
 
@@ -273,26 +274,22 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `crm_export_${new Date().toISOString().slice(0,10)}.csv`;
-                document.body.appendChild(a);
+                a.download = `crm_export.csv`;
                 a.click();
-                document.body.removeChild(a);
             },
             
             archiveDeal: async () => {
                 const id = document.getElementById('dealId').value;
-                if(!id || !supabase) return;
-                const status = confirm("Marcar como GANHO? (OK = Ganho, Cancelar = Perdido)") ? 'won' : 'lost';
-                
-                await supabase.from('deals').update({ status: 'archived', notes: `[${status.toUpperCase()}] ` + document.getElementById('dealNotes').value }).eq('id', id);
+                if(!id) return;
+                const status = confirm("Ganhou o negócio? (OK = Sim, Cancelar = Perdeu)") ? 'won' : 'lost';
+                await window.supabaseClient.from('deals').update({ status: 'archived', notes: `[${status.toUpperCase()}] ` + document.getElementById('dealNotes').value }).eq('id', id);
                 window.ui.closeModal();
                 window.app.loadDeals();
             },
             
-            fetchChatInfo: async () => {
+            fetchChatInfo: () => {
                 const id = document.getElementById('dealChatId').value;
-                if(!id) return;
-                window.open(`${config.cwUrl}/app/accounts/1/conversations/${id}`, '_blank');
+                if(id) window.open(`${config.cwUrl}/app/accounts/1/conversations/${id}`, '_blank');
             }
         };
 
@@ -316,18 +313,14 @@
                     `;
                     board.appendChild(col);
 
-                    // Inicializa Drag & Drop com segurança
                     if(typeof Sortable !== 'undefined') {
                         new Sortable(col.querySelector('.kanban-list'), {
                             group: 'deals',
                             animation: 150,
                             ghostClass: 'ghost-card',
                             onEnd: (evt) => {
-                                const item = evt.item;
-                                const newStage = evt.to.dataset.stage;
-                                const oldStage = evt.from.dataset.stage;
-                                if (newStage !== oldStage) {
-                                    window.app.moveDeal(item.dataset.id, newStage);
+                                if (evt.to.dataset.stage !== evt.from.dataset.stage) {
+                                    window.app.moveDeal(evt.item.dataset.id, evt.to.dataset.stage);
                                 }
                             }
                         });
@@ -345,10 +338,8 @@
 
                 const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(deal.value);
                 const date = new Date(deal.created_at).toLocaleDateString('pt-BR');
-                
                 const chatLink = deal.chatwoot_id 
-                    ? `<a href="${config.cwUrl}/app/accounts/1/conversations/${deal.chatwoot_id}" target="_blank" class="action-btn text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 flex items-center gap-1">💬 Chat #${deal.chatwoot_id}</a>` 
-                    : '';
+                    ? `<a href="${config.cwUrl}/app/accounts/1/conversations/${deal.chatwoot_id}" target="_blank" class="action-btn text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 flex items-center gap-1">💬 Chat #${deal.chatwoot_id}</a>` : '';
 
                 const prioColors = { low: 'bg-green-100 text-green-700', medium: 'bg-yellow-100 text-yellow-700', high: 'bg-red-100 text-red-700' };
                 
@@ -359,11 +350,7 @@
                     </div>
                     <h4 class="font-bold text-gray-800 text-sm mb-1 line-clamp-2">${deal.title}</h4>
                     <p class="font-mono text-xs text-gray-600 font-medium mb-3">${formattedValue}</p>
-                    
-                    <div class="flex justify-between items-center border-t pt-2 mt-2">
-                        ${chatLink}
-                        <span class="text-[10px] text-gray-400">ID: ${deal.id}</span>
-                    </div>
+                    <div class="flex justify-between items-center border-t pt-2 mt-2">${chatLink}<span class="text-[10px] text-gray-400">ID: ${deal.id}</span></div>
                 `;
                 return el;
             },
@@ -377,7 +364,6 @@
                 document.getElementById('dealNotes').value = deal.notes || '';
                 document.getElementById('modalTitle').innerText = 'Editar Negócio';
                 document.getElementById('btnArchive').classList.remove('hidden');
-                
                 document.getElementById('dealModal').classList.remove('hidden');
             },
 
@@ -408,10 +394,8 @@
             }
         };
 
-        // Inicialização Segura
+        // Inicialização
         document.addEventListener('DOMContentLoaded', window.app.init);
-
     </script>
 </body>
 </html>
-
