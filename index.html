@@ -4,54 +4,104 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRM BeMore</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Permite controle via classe 'dark'
+        }
+    </script>
+
     <style>
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
         .ghost-card { background: #eff6ff; border: 2px dashed #3b82f6; opacity: 0.5; }
+        .dark .ghost-card { background: #1e293b; border-color: #3b82f6; }
         .deal-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        /* Badge do Canal */
+        
+        /* Badges de Canal */
         .channel-icon.whatsapp { color: #25D366; background: #dcf8c6; }
         .channel-icon.web_widget { color: #3b82f6; background: #dbeafe; }
         .channel-icon.api { color: #8b5cf6; background: #ede9fe; }
         .channel-icon.email { color: #ea580c; background: #ffedd5; }
+        
+        /* Dark Mode Badges */
+        .dark .channel-icon.whatsapp { background: #064e3b; color: #4ade80; }
+        .dark .channel-icon.web_widget { background: #1e3a8a; color: #60a5fa; }
+        .dark .channel-icon.api { background: #4c1d95; color: #a78bfa; }
+        .dark .channel-icon.email { background: #7c2d12; color: #fdba74; }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden text-sm text-gray-700">
+<body class="h-screen flex flex-col overflow-hidden text-sm text-gray-700 bg-slate-50 dark:bg-slate-900 dark:text-gray-200 transition-colors duration-300">
 
-    <div class="bg-white border-b px-6 py-3 flex justify-between items-center shadow-sm z-20">
+    <div class="bg-white dark:bg-slate-800 border-b dark:border-slate-700 px-6 py-3 flex justify-between items-center shadow-sm z-20 transition-colors">
         <div class="flex items-center gap-4">
-            <h1 class="font-bold text-xl text-gray-800 tracking-tight flex items-center gap-2">
+            <h1 class="font-bold text-xl text-gray-800 dark:text-white tracking-tight flex items-center gap-2">
                 <i class="fa-solid fa-rocket text-blue-600"></i> BeMore CRM
             </h1>
-            <div id="total-pipeline" class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold border border-green-200">
+            <div id="total-pipeline" class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 px-3 py-1 rounded-full text-xs font-bold border border-green-200 dark:border-green-800">
                 R$ 0,00
             </div>
         </div>
         <div class="flex gap-2">
-             <button onclick="window.app.exportCSV()" class="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded text-gray-600 transition border">
+             <button onclick="window.app.openReports()" class="flex items-center gap-2 px-3 py-2 bg-purple-100 hover:bg-purple-200 dark:bg-purple-900 dark:hover:bg-purple-800 text-purple-700 dark:text-purple-200 rounded transition border border-purple-200 dark:border-purple-700 font-medium">
+                <i class="fa-solid fa-chart-pie"></i> Relatórios
+            </button>
+             <button onclick="window.app.exportCSV()" class="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 dark:bg-slate-700 dark:hover:bg-slate-600 rounded text-gray-600 dark:text-gray-300 transition border dark:border-slate-600">
                 <i class="fa-solid fa-download"></i> Exportar
             </button>
             <button onclick="window.ui.openModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium shadow-sm transition">
                 <i class="fa-solid fa-plus"></i> Novo Negócio
             </button>
-            <button onclick="window.ui.toggleSettings()" class="p-2 text-gray-400 hover:text-gray-600 transition"><i class="fa-solid fa-gear"></i></button>
+            <button onclick="window.ui.toggleSettings()" class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"><i class="fa-solid fa-gear"></i></button>
         </div>
     </div>
 
-    <div id="board" class="flex-1 overflow-x-auto overflow-y-hidden flex p-6 gap-6 items-start bg-slate-50">
-        <div class="m-auto text-gray-400 text-center animate-pulse">Carregando CRM...</div>
+    <div id="board" class="flex-1 overflow-x-auto overflow-y-hidden flex p-6 gap-6 items-start bg-slate-50 dark:bg-slate-900 transition-colors">
+        <div class="m-auto text-gray-400 dark:text-gray-500 text-center animate-pulse">
+            <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i><br>Carregando seu império...
+        </div>
+    </div>
+
+    <div id="reportsModal" class="fixed inset-0 bg-slate-900/90 hidden z-50 overflow-y-auto backdrop-blur-sm">
+        <div class="min-h-screen px-10 py-10">
+            <div class="flex justify-between items-center mb-8 max-w-6xl mx-auto">
+                <h2 class="text-3xl font-bold text-white"><i class="fa-solid fa-chart-line text-blue-500"></i> Dashboard de Vendas</h2>
+                <button onclick="document.getElementById('reportsModal').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl transition"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border dark:border-slate-700">
+                    <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Funil de Vendas (R$)</h3>
+                    <div class="h-64">
+                        <canvas id="chartStage"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border dark:border-slate-700">
+                    <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Origem dos Leads</h3>
+                    <div class="h-64 flex justify-center">
+                        <canvas id="chartChannel"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="max-w-6xl mx-auto mt-8 bg-blue-900/50 border border-blue-800 p-4 rounded-lg text-blue-200 text-center">
+                <p>💡 Dica: Mantenha os valores dos cards atualizados para que os relatórios reflitam a realidade.</p>
+            </div>
+        </div>
     </div>
 
     <div id="dealModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto py-10">
-        <div class="bg-white rounded-xl shadow-2xl w-[600px] p-6 transform transition-all scale-100 relative">
-            <div class="flex justify-between items-center mb-6 border-b pb-4">
-                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2" id="modalTitle">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[600px] p-6 transform transition-all scale-100 relative border dark:border-slate-700">
+            <div class="flex justify-between items-center mb-6 border-b dark:border-slate-700 pb-4">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2" id="modalTitle">
                     <i class="fa-regular fa-id-card"></i> Novo Negócio
                 </h2>
                 <button onclick="window.ui.closeModal()" class="text-gray-400 hover:text-red-500 text-2xl transition">&times;</button>
@@ -61,73 +111,73 @@
                 <input type="hidden" id="dealId">
                 <input type="hidden" id="conversationStart">
                 
-                <div class="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-100">
-                    <label class="block text-xs font-bold uppercase text-blue-600 mb-2">🔄 Vincular Chatwoot (Auto-preencher)</label>
+                <div class="bg-blue-50 dark:bg-slate-700 p-4 rounded-lg mb-6 border border-blue-100 dark:border-slate-600">
+                    <label class="block text-xs font-bold uppercase text-blue-600 dark:text-blue-400 mb-2">🔄 Vincular Chatwoot</label>
                     <div class="flex gap-2">
-                        <input type="text" id="dealPhone" class="flex-1 border border-blue-200 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Telefone (ex: +55...) ou ID da Conversa">
+                        <input type="text" id="dealPhone" class="flex-1 border border-blue-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Telefone ou ID da Conversa">
                         <button type="button" onclick="window.app.fetchChatwootData()" class="px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition shadow-sm flex items-center gap-2">
                             <i class="fa-solid fa-magnifying-glass"></i> Buscar
                         </button>
                     </div>
-                    <p class="text-[10px] text-blue-400 mt-1 pl-1">Busca dados no Chatwoot. Se não existir, criaremos o contato ao salvar.</p>
+                    <p class="text-[10px] text-blue-400 dark:text-slate-400 mt-1 pl-1">Busca dados no Chatwoot. Se não existir, criaremos o contato ao salvar.</p>
                 </div>
 
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Cliente / Título</label>
-                            <input type="text" id="dealTitle" required class="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-blue-500" placeholder="Nome do Cliente">
+                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Cliente / Título</label>
+                            <input type="text" id="dealTitle" required class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none focus:border-blue-500" placeholder="Nome do Cliente">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Empresa</label>
-                            <input type="text" id="dealCompany" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-blue-500" placeholder="Empresa Ltda">
+                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Empresa</label>
+                            <input type="text" id="dealCompany" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none focus:border-blue-500" placeholder="Empresa Ltda">
                         </div>
                     </div>
 
                     <div>
-                         <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Email</label>
-                         <input type="email" id="dealEmail" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-blue-500" placeholder="email@cliente.com">
+                         <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Email</label>
+                         <input type="email" id="dealEmail" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none focus:border-blue-500" placeholder="email@cliente.com">
                     </div>
 
                     <div class="grid grid-cols-3 gap-4">
                         <div class="col-span-1">
-                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Valor (R$)</label>
-                            <input type="number" id="dealValue" step="0.01" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-blue-500" placeholder="0.00">
+                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Valor (R$)</label>
+                            <input type="number" id="dealValue" step="0.01" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none focus:border-blue-500" placeholder="0.00">
                         </div>
                         <div class="col-span-1">
-                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Chat ID</label>
-                            <input type="text" id="dealChatId" class="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-50" readonly placeholder="Auto">
+                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Chat ID</label>
+                            <input type="text" id="dealChatId" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-300 rounded-lg p-2.5 bg-gray-50" readonly placeholder="Auto">
                         </div>
                          <div class="col-span-1">
-                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Canal (Editável)</label>
-                            <input type="text" id="dealChannel" class="w-full border border-gray-300 rounded-lg p-2.5 focus:border-blue-500 outline-none" placeholder="Ex: Indicação">
+                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Canal</label>
+                            <input type="text" id="dealChannel" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 focus:border-blue-500 outline-none" placeholder="Ex: Indicação">
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <div class="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-slate-700 p-3 rounded-lg border border-gray-100 dark:border-slate-600">
                         <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">📅 Data Reunião</label>
-                            <input type="datetime-local" id="dealMeeting" class="w-full border border-gray-200 rounded-lg p-2 outline-none">
+                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-1">📅 Data Reunião</label>
+                            <input type="datetime-local" id="dealMeeting" class="w-full border border-gray-200 dark:border-slate-500 dark:bg-slate-600 dark:text-white rounded-lg p-2 outline-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">🏁 Previsão Fechamento</label>
-                            <input type="date" id="dealClosing" class="w-full border border-gray-200 rounded-lg p-2 outline-none">
+                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-1">🏁 Previsão Fechamento</label>
+                            <input type="date" id="dealClosing" class="w-full border border-gray-200 dark:border-slate-500 dark:bg-slate-600 dark:text-white rounded-lg p-2 outline-none">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Notas / Detalhes</label>
-                        <textarea id="dealNotes" rows="3" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-blue-500"></textarea>
+                        <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Notas / Detalhes</label>
+                        <textarea id="dealNotes" rows="3" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none focus:border-blue-500"></textarea>
                     </div>
                 </div>
 
-                <div class="mt-8 flex justify-between items-center pt-4 border-t">
+                <div class="mt-8 flex justify-between items-center pt-4 border-t dark:border-slate-700">
                      <button type="button" onclick="window.app.archiveDeal()" id="btnArchive" class="hidden text-red-500 hover:text-red-700 text-xs font-bold uppercase flex items-center gap-1">
-                        <i class="fa-solid fa-trash"></i> Arquivar / Ganho / Perdido
+                        <i class="fa-solid fa-trash"></i> Arquivar
                     </button>
                     <div class="flex gap-3 ml-auto">
-                        <button type="button" onclick="window.ui.closeModal()" class="px-5 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium">Cancelar</button>
-                        <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transform active:scale-95 transition">Salvar Negócio</button>
+                        <button type="button" onclick="window.ui.closeModal()" class="px-5 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg font-medium">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transform active:scale-95 transition">Salvar</button>
                     </div>
                 </div>
             </form>
@@ -135,34 +185,49 @@
     </div>
 
     <div id="settingsModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg w-96 p-6 shadow-2xl">
-            <h2 class="font-bold text-lg mb-4 text-gray-800">🔌 Conexões</h2>
-            
+        <div class="bg-white dark:bg-slate-800 rounded-lg w-96 p-6 shadow-2xl border dark:border-slate-700">
+            <h2 class="font-bold text-lg mb-4 text-gray-800 dark:text-white">🔌 Conexões</h2>
             <div class="space-y-4">
-                <div class="bg-yellow-50 p-3 rounded text-[10px] text-yellow-800 border border-yellow-200">
-                    <i class="fa-solid fa-triangle-exclamation"></i> <b>Atenção:</b> Essas configurações ficam salvas neste navegador. Se usar outro computador, precisará preencher novamente.
+                <div class="bg-yellow-50 dark:bg-yellow-900/30 p-3 rounded text-[10px] text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <b>Atenção:</b> Configurações locais deste navegador.
                 </div>
-
                 <div>
-                    <h3 class="text-xs font-bold text-blue-600 uppercase mb-2">Banco de Dados (Supabase)</h3>
-                    <input type="text" id="sbUrl" placeholder="Project URL" class="w-full border p-2 rounded text-xs mb-2">
-                    <input type="password" id="sbKey" placeholder="Anon Key" class="w-full border p-2 rounded text-xs">
+                    <h3 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-2">Supabase</h3>
+                    <input type="text" id="sbUrl" placeholder="Project URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
+                    <input type="password" id="sbKey" placeholder="Anon Key" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs">
                 </div>
-                <hr>
+                <hr class="dark:border-slate-600">
                 <div>
-                    <h3 class="text-xs font-bold text-green-600 uppercase mb-2">Chatwoot API</h3>
-                    <input type="text" id="cwUrl" placeholder="URL (ex: https://chat.bemore.ia.br)" class="w-full border p-2 rounded text-xs mb-2">
-                    <input type="text" id="cwToken" placeholder="User Access Token (Perfil)" class="w-full border p-2 rounded text-xs mb-2">
-                    <input type="text" id="cwAccount" placeholder="ID da Conta (ex: 1)" class="w-full border p-2 rounded text-xs">
+                    <h3 class="text-xs font-bold text-green-600 dark:text-green-400 uppercase mb-2">Chatwoot API</h3>
+                    <input type="text" id="cwUrl" placeholder="URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
+                    <input type="text" id="cwToken" placeholder="Token" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
+                    <input type="text" id="cwAccount" placeholder="ID Conta" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs">
                 </div>
             </div>
-            <button onclick="window.app.saveSettings()" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold transition">Salvar Configurações</button>
+            <button onclick="window.app.saveSettings()" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold transition">Salvar</button>
         </div>
     </div>
 
     <script>
+        // --- 1. LÓGICA DO TEMA (DARK/LIGHT) ---
+        const themeCheck = () => {
+            // Verifica se o SO prefere dark mode
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        };
+        // Roda ao iniciar
+        themeCheck();
+        // Fica ouvindo mudanças do sistema
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themeCheck);
+
+
+        // --- 2. CONFIGURAÇÃO GERAL ---
         window.supabaseClient = null;
-        
+        window.myCharts = {}; // Para guardar os gráficos
+
         const config = {
             stages: {
                 'prospeccao': { title: '🔎 Prospecção', color: 'border-blue-500' },
@@ -178,15 +243,16 @@
             cwAccount: localStorage.getItem('crm_cw_account') || '1'
         };
 
+        // --- 3. APLICAÇÃO ---
         window.app = {
+            dealsData: [], // Cache local dos deals para o relatório
+
             init: async () => {
                 if (typeof window.supabase === 'undefined') return alert("Erro: Lib Supabase off.");
-                
                 if (!config.sbUrl || !config.sbKey) {
                     window.ui.toggleSettings();
                     return;
                 }
-
                 try {
                     const { createClient } = window.supabase;
                     window.supabaseClient = createClient(config.sbUrl, config.sbKey);
@@ -202,10 +268,11 @@
                 const { data, error } = await window.supabaseClient.from('deals').select('*').neq('status', 'archived').order('created_at', { ascending: false });
                 
                 if (error) {
-                    console.error(error);
                     if(error.code === '401') window.ui.toggleSettings();
                     return;
                 }
+
+                window.app.dealsData = data || []; // Salva para relatórios
 
                 document.querySelectorAll('.kanban-list').forEach(el => el.innerHTML = '');
                 let total = 0;
@@ -223,35 +290,97 @@
                 window.ui.updateCounts();
             },
 
+            // --- RELATÓRIOS ---
+            openReports: () => {
+                const modal = document.getElementById('reportsModal');
+                modal.classList.remove('hidden');
+                
+                // Prepara dados
+                const deals = window.app.dealsData;
+                
+                // 1. Dados por Etapa (Valores)
+                const stageValues = {};
+                Object.keys(config.stages).forEach(k => stageValues[k] = 0);
+                deals.forEach(d => {
+                    if(stageValues[d.stage] !== undefined) stageValues[d.stage] += parseFloat(d.value || 0);
+                });
+
+                // 2. Dados por Canal
+                const channels = {};
+                deals.forEach(d => {
+                    let ch = d.channel ? d.channel.split('::')[0] : 'Outros'; // Simplifica o nome
+                    if(ch === 'api') ch = 'API/Integração';
+                    if(!ch) ch = 'Manual';
+                    channels[ch] = (channels[ch] || 0) + 1;
+                });
+
+                // Renderiza Gráficos
+                window.app.renderChart('chartStage', 'bar', 'Valor em Pipeline (R$)', Object.keys(stageValues).map(k => config.stages[k].title), Object.values(stageValues));
+                window.app.renderChart('chartChannel', 'doughnut', 'Leads por Canal', Object.keys(channels), Object.values(channels));
+            },
+
+            renderChart: (canvasId, type, label, labels, data) => {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                
+                // Destroi anterior se existir para não bugar
+                if(window.myCharts[canvasId]) window.myCharts[canvasId].destroy();
+
+                const isDark = document.documentElement.classList.contains('dark');
+                const textColor = isDark ? '#e2e8f0' : '#475569';
+
+                window.myCharts[canvasId] = new Chart(ctx, {
+                    type: type,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: label,
+                            data: data,
+                            backgroundColor: [
+                                '#3b82f6', '#eab308', '#f97316', '#a855f7', '#22c55e', '#ef4444'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: textColor } }
+                        },
+                        scales: type === 'bar' ? {
+                            y: { ticks: { color: textColor }, grid: { color: isDark ? '#334155' : '#e2e8f0' } },
+                            x: { ticks: { color: textColor }, grid: { display: false } }
+                        } : {}
+                    }
+                });
+            },
+
+            // --- FIM RELATÓRIOS ---
+
             fetchChatwootData: async () => {
                 const query = document.getElementById('dealPhone').value.trim();
-                if(!query) return alert("Digite um telefone ou ID para buscar.");
-                if(!config.cwToken || !config.cwUrl) return alert("Configure o Token do Chatwoot na engrenagem.");
+                if(!query) return alert("Digite um telefone ou ID.");
+                if(!config.cwToken || !config.cwUrl) return alert("Configure a API.");
 
                 const btn = document.querySelector('button[onclick="window.app.fetchChatwootData()"]');
                 const originalText = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Buscando...';
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
                 try {
-                    // Busca Contato
                     let searchUrl = `${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/search?q=${query}`;
                     let res = await fetch(searchUrl, { headers: { 'api_access_token': config.cwToken } });
                     let json = await res.json();
                     
                     let contact = null;
-                    if(json.payload && json.payload.length > 0) {
-                        contact = json.payload[0];
-                    } else {
-                        // Busca Conversa ID
-                        if(!isNaN(query)) {
-                             let convRes = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/conversations/${query}`, { headers: { 'api_access_token': config.cwToken } });
-                             if(convRes.ok) {
-                                 let convJson = await convRes.json();
-                                 contact = convJson.meta.sender;
-                                 document.getElementById('dealChatId').value = convJson.id;
-                                 if(convJson.created_at) document.getElementById('conversationStart').value = new Date(convJson.created_at * 1000).toISOString();
-                                 document.getElementById('dealChannel').value = convJson.meta.channel || 'api';
-                             }
+                    if(json.payload?.length > 0) contact = json.payload[0];
+                    else if(!isNaN(query)) {
+                        let cRes = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/conversations/${query}`, { headers: { 'api_access_token': config.cwToken } });
+                        if(cRes.ok) {
+                            let cJson = await cRes.json();
+                            contact = cJson.meta.sender;
+                            document.getElementById('dealChatId').value = cJson.id;
+                            if(cJson.created_at) document.getElementById('conversationStart').value = new Date(cJson.created_at * 1000).toISOString();
+                            document.getElementById('dealChannel').value = cJson.meta.channel;
                         }
                     }
 
@@ -259,74 +388,30 @@
                         document.getElementById('dealTitle').value = contact.name || 'Sem nome';
                         document.getElementById('dealEmail').value = contact.email || '';
                         document.getElementById('dealPhone').value = contact.phone_number || query;
-                        
                         if(contact.additional_attributes?.company_name) document.getElementById('dealCompany').value = contact.additional_attributes.company_name;
-                        else if (contact.company) document.getElementById('dealCompany').value = contact.company.name;
-
-                        // Busca conversa se faltar
-                        if(!document.getElementById('dealChatId').value) {
-                             let convsRes = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/${contact.id}/conversations`, { headers: { 'api_access_token': config.cwToken } });
-                             let convsJson = await convsRes.json();
-                             if(convsJson.payload && convsJson.payload.length > 0) {
-                                 const lastConv = convsJson.payload[0];
-                                 document.getElementById('dealChatId').value = lastConv.id;
-                                 document.getElementById('dealChannel').value = lastConv.meta.channel;
-                                 if(lastConv.created_at) document.getElementById('conversationStart').value = new Date(lastConv.created_at * 1000).toISOString();
-                             }
-                        }
                         
-                        btn.className = "px-4 bg-green-600 text-white rounded-lg font-medium shadow-sm flex items-center gap-2";
-                        btn.innerHTML = '<i class="fa-solid fa-check"></i> Encontrado!';
+                        btn.className = "px-4 bg-green-600 text-white rounded-lg";
+                        btn.innerHTML = '<i class="fa-solid fa-check"></i>';
                         setTimeout(() => { btn.className = "px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition shadow-sm flex items-center gap-2"; btn.innerHTML = originalText; }, 2000);
-
                     } else {
-                        alert("Nada encontrado. Preencha os dados e salvaremos um novo contato.");
+                        alert("Nada encontrado. Preencha manualmente.");
                         btn.innerHTML = originalText;
                     }
-
                 } catch (e) {
                     console.error(e);
-                    alert("Erro na busca: " + e.message);
                     btn.innerHTML = originalText;
                 }
             },
 
-            // --- CRIA CONTATO NO CHATWOOT SE NÃO EXISTIR ---
             createChatwootContact: async (deal) => {
                 if(!config.cwUrl || !config.cwToken) return;
-                console.log("Tentando criar contato no Chatwoot...");
-                
                 try {
-                    const body = {
-                        name: deal.title,
-                        email: deal.email,
-                        phone_number: deal.phone,
-                        company_name: deal.company
-                    };
-                    
-                    const res = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts`, {
+                    await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts`, {
                         method: 'POST',
-                        headers: { 
-                            'api_access_token': config.cwToken,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(body)
+                        headers: { 'api_access_token': config.cwToken, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: deal.title, email: deal.email, phone_number: deal.phone, company_name: deal.company })
                     });
-
-                    if(res.ok) {
-                        console.log("✅ Contato criado no Chatwoot!");
-                        const json = await res.json();
-                        // Aqui poderíamos salvar o ID do contato no Supabase se tivéssemos a coluna
-                        // Mas o principal é que ele agora existe lá para futuras conversas
-                        alert(`Contato ${deal.title} criado no Chatwoot com sucesso!`);
-                    } else {
-                        const err = await res.json();
-                        console.warn("Contato já existe ou erro:", err);
-                        // Não damos alert de erro aqui para não travar o fluxo, pois pode ser duplicado
-                    }
-                } catch(e) {
-                    console.error("Erro ao sincronizar contato:", e);
-                }
+                } catch(e) { console.error(e); }
             },
 
             saveDeal: async (e) => {
@@ -348,10 +433,7 @@
                     notes: document.getElementById('dealNotes').value,
                 };
 
-                // Se for novo e tiver telefone/email, cria no Chatwoot
-                if (!id && (deal.phone || deal.email)) {
-                    await window.app.createChatwootContact(deal);
-                }
+                if (!id && (deal.phone || deal.email)) await window.app.createChatwootContact(deal);
 
                 let error;
                 if (id) {
@@ -392,8 +474,7 @@
                 let csv = 'ID,Cliente,Empresa,Email,Telefone,Valor,Etapa,Canal,Data Reuniao,Prev. Fechamento,Chat ID\n';
                 data.forEach(row => {
                     const safeTitle = (row.title || '').replace(/"/g, '""');
-                    const safeCompany = (row.company || '').replace(/"/g, '""');
-                    csv += `${row.id},"${safeTitle}","${safeCompany}","${row.email}","${row.phone}",${row.value},${row.stage},${row.channel},${row.meeting_date},${row.closing_date},${row.chatwoot_id}\n`;
+                    csv += `${row.id},"${safeTitle}","${row.company||''}","${row.email||''}","${row.phone||''}",${row.value},${row.stage},${row.channel||''},${row.meeting_date||''},${row.closing_date||''},${row.chatwoot_id||''}\n`;
                 });
 
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -424,11 +505,11 @@
                         <div class="flex justify-between items-center mb-3 px-1">
                             <div class="flex items-center gap-2">
                                 <span class="w-3 h-3 rounded-full ${info.color.replace('border', 'bg')}"></span>
-                                <h3 class="font-bold text-gray-700 uppercase text-xs tracking-wider">${info.title}</h3>
+                                <h3 class="font-bold text-gray-700 dark:text-gray-300 uppercase text-xs tracking-wider">${info.title}</h3>
                             </div>
-                            <span class="count bg-white px-2 py-0.5 rounded-full text-[10px] font-bold text-gray-500 shadow-sm border">0</span>
+                            <span class="count bg-white dark:bg-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold text-gray-500 dark:text-gray-300 shadow-sm border dark:border-slate-600">0</span>
                         </div>
-                        <div class="kanban-list flex-1 bg-gray-100/50 rounded-xl p-2 space-y-3 overflow-y-auto border border-gray-200/60 custom-scrollbar" id="col-${key}" data-stage="${key}"></div>
+                        <div class="kanban-list flex-1 bg-gray-100/50 dark:bg-slate-800/50 rounded-xl p-2 space-y-3 overflow-y-auto border border-gray-200/60 dark:border-slate-700/60 custom-scrollbar" id="col-${key}" data-stage="${key}"></div>
                     `;
                     board.appendChild(col);
 
@@ -449,7 +530,7 @@
 
             createCard: (deal) => {
                 const el = document.createElement('div');
-                el.className = 'deal-card bg-white p-4 rounded-lg shadow-sm border border-gray-100 cursor-pointer transition-all relative group';
+                el.className = 'deal-card bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 cursor-pointer transition-all relative group';
                 el.dataset.id = deal.id;
                 el.onclick = (e) => {
                     if(!e.target.closest('a')) window.ui.editDeal(deal);
@@ -458,48 +539,43 @@
                 const val = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(deal.value);
                 const date = new Date(deal.created_at).toLocaleDateString('pt-BR');
                 
-                // Icone do Canal
                 let channelIcon = '';
                 if(deal.channel) {
                     let iconClass = 'fa-globe';
                     let bgClass = 'channel-icon api';
                     if(deal.channel.toLowerCase().includes('whatsapp')) { iconClass = 'fa-whatsapp'; bgClass = 'channel-icon whatsapp'; }
                     else if(deal.channel.toLowerCase().includes('email')) { iconClass = 'fa-envelope'; bgClass = 'channel-icon email'; }
-                    
                     channelIcon = `<span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${bgClass}"><i class="fa-brands ${iconClass}"></i></span>`;
                 }
 
-                // Tempo decorrido (Conversa)
                 let timeBadge = '';
                 if(deal.conversation_start) {
                     const days = Math.floor((new Date() - new Date(deal.conversation_start)) / (1000 * 60 * 60 * 24));
-                    timeBadge = `<span class="text-[10px] text-gray-400 flex items-center gap-1" title="Dias desde o início"><i class="fa-regular fa-clock"></i> ${days}d</span>`;
+                    timeBadge = `<span class="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1" title="Dias desde o início"><i class="fa-regular fa-clock"></i> ${days}d</span>`;
                 }
 
                 const chatLink = deal.chatwoot_id 
-                    ? `<a href="${config.cwUrl}/app/accounts/${config.cwAccount}/conversations/${deal.chatwoot_id}" target="_blank" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 flex items-center gap-1 font-medium" onclick="event.stopPropagation()">
-                        <i class="fa-regular fa-comments"></i> Abrir Chat
+                    ? `<a href="${config.cwUrl}/app/accounts/${config.cwAccount}/conversations/${deal.chatwoot_id}" target="_blank" class="text-xs bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-100 dark:hover:bg-slate-600 flex items-center gap-1 font-medium" onclick="event.stopPropagation()">
+                        <i class="fa-regular fa-comments"></i> Chat
                        </a>` : '';
                 
-                // Badge de Fechamento
                 const closingBadge = deal.closing_date 
-                    ? `<div class="text-[10px] bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100 flex items-center gap-1 ml-auto"><i class="fa-solid fa-flag-checkered"></i> ${new Date(deal.closing_date).toLocaleDateString().slice(0,5)}</div>` 
-                    : '';
+                    ? `<div class="text-[10px] bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded border border-purple-100 dark:border-purple-800 flex items-center gap-1 ml-auto"><i class="fa-solid fa-flag-checkered"></i> ${new Date(deal.closing_date).toLocaleDateString().slice(0,5)}</div>` : '';
 
                 el.innerHTML = `
                     <div class="flex justify-between items-start mb-2">
-                        <div class="flex gap-2">${channelIcon} <span class="text-[10px] font-bold text-gray-400 uppercase truncate max-w-[120px]">${deal.company || 'Particular'}</span></div>
-                        <span class="text-[10px] text-gray-300">${date}</span>
+                        <div class="flex gap-2">${channelIcon} <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase truncate max-w-[120px]">${deal.company || 'Particular'}</span></div>
+                        <span class="text-[10px] text-gray-300 dark:text-gray-600">${date}</span>
                     </div>
-                    <h4 class="font-bold text-gray-800 text-sm mb-1 truncate">${deal.title}</h4>
-                    <p class="font-mono text-xs text-gray-600 font-medium mb-3">${val}</p>
+                    <h4 class="font-bold text-gray-800 dark:text-gray-200 text-sm mb-1 truncate">${deal.title}</h4>
+                    <p class="font-mono text-xs text-gray-600 dark:text-gray-400 font-medium mb-3">${val}</p>
                     
                     <div class="flex flex-wrap gap-2 mb-2">
-                        ${deal.meeting_date ? `<div class="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-1 rounded border border-yellow-100 flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${new Date(deal.meeting_date).toLocaleDateString().slice(0,5)}</div>` : ''}
+                        ${deal.meeting_date ? `<div class="text-[10px] bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded border border-yellow-100 dark:border-yellow-800 flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${new Date(deal.meeting_date).toLocaleDateString().slice(0,5)}</div>` : ''}
                         ${closingBadge}
                     </div>
 
-                    <div class="flex justify-between items-center border-t pt-2 mt-2">
+                    <div class="flex justify-between items-center border-t dark:border-slate-700 pt-2 mt-2">
                         ${chatLink}
                         ${timeBadge}
                     </div>
