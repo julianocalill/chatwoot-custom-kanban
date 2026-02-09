@@ -108,9 +108,12 @@
     </div>
 
     <script>
-        // --- LÓGICA DO CRM ---
-        let supabase;
+        // --- BLINDAGEM DO SISTEMA ---
+        // Garante que o app seja global para os botões funcionarem
+        window.app = {};
+        window.ui = {};
         
+        // Configuração inicial segura
         const config = {
             stages: {
                 'prospeccao': { title: '🔎 Prospecção', color: 'border-blue-500' },
@@ -119,36 +122,64 @@
                 'negociacao': { title: '🤝 Negociação', color: 'border-purple-500' },
                 'fechamento': { title: '💰 Fechamento', color: 'border-green-500' }
             },
-            sbUrl: localStorage.getItem('crm_sb_url'),
-            sbKey: localStorage.getItem('crm_sb_key'),
+            sbUrl: localStorage.getItem('crm_sb_url') || '',
+            sbKey: localStorage.getItem('crm_sb_key') || '',
             cwUrl: localStorage.getItem('crm_cw_url') || 'https://chat.bemore.ia.br'
         };
 
-        const app = {
+        let supabase = null;
+
+        // --- LÓGICA DO APP ---
+        window.app = {
             init: async () => {
-                if (!config.sbUrl || !config.sbKey) {
-                    ui.toggleSettings();
+                console.log("🚀 Iniciando BeMore CRM...");
+                
+                // Verifica se a biblioteca Supabase carregou
+                if (typeof window.supabase === 'undefined') {
+                    console.error("❌ Erro Crítico: A biblioteca do Supabase não carregou.");
+                    alert("Erro de conexão: O sistema de banco de dados não pôde ser carregado. Verifique sua internet ou bloqueadores de anúncio.");
                     return;
                 }
-                // Inicializa Supabase
-                supabase = window.supabase.createClient(config.sbUrl, config.sbKey);
-                
-                // Desenha colunas
-                ui.renderBoard();
-                
-                // Carrega dados
-                await app.loadDeals();
+
+                // Verifica credenciais
+                if (!config.sbUrl || !config.sbKey) {
+                    console.warn("⚠️ Sem credenciais. Abrindo configurações...");
+                    window.ui.toggleSettings();
+                    return;
+                }
+
+                try {
+                    // Inicializa Supabase
+                    const { createClient } = window.supabase;
+                    supabase = createClient(config.sbUrl, config.sbKey);
+                    console.log("✅ Conexão com Supabase iniciada.");
+                    
+                    // Desenha colunas e carrega dados
+                    window.ui.renderBoard();
+                    await window.app.loadDeals();
+                } catch (e) {
+                    console.error("Erro na inicialização:", e);
+                    alert("Erro ao iniciar sistema: " + e.message);
+                }
             },
 
             loadDeals: async () => {
+                if(!supabase) return;
+                console.log("📥 Buscando negócios...");
+                
                 const { data, error } = await supabase
                     .from('deals')
                     .select('*')
-                    .neq('status', 'archived') // Não mostra os arquivados no board
+                    .neq('status', 'archived')
                     .order('created_at', { ascending: false });
 
                 if (error) {
-                    alert('Erro ao carregar: ' + error.message);
+                    console.error("Erro Supabase:", error);
+                    // Se o erro for 401/400, as chaves podem estar erradas
+                    if(error.code === 'PGRST301' || error.message.includes('JWT')) {
+                        alert("Suas credenciais do Supabase parecem inválidas. Verifique a URL e a Key nas configurações.");
+                        window.ui.toggleSettings();
+                    }
                     return;
                 }
 
@@ -160,17 +191,19 @@
                 data.forEach(deal => {
                     const col = document.getElementById(`col-${deal.stage}`);
                     if (col) {
-                        col.appendChild(ui.createCard(deal));
+                        col.appendChild(window.ui.createCard(deal));
                         total += parseFloat(deal.value || 0);
                     }
                 });
 
                 document.getElementById('total-pipeline').innerText = `Pipeline: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total)}`;
-                ui.updateCounts();
+                window.ui.updateCounts();
             },
 
             saveDeal: async (e) => {
                 e.preventDefault();
+                if(!supabase) return;
+
                 const id = document.getElementById('dealId').value;
                 const deal = {
                     title: document.getElementById('dealTitle').value,
@@ -182,62 +215,80 @@
 
                 let error;
                 if (id) {
-                    // Update
                     const res = await supabase.from('deals').update(deal).eq('id', id);
                     error = res.error;
                 } else {
-                    // Insert
                     const res = await supabase.from('deals').insert([{ ...deal, stage: 'prospeccao' }]);
                     error = res.error;
                 }
 
                 if (error) alert('Erro ao salvar: ' + error.message);
                 else {
-                    ui.closeModal();
-                    app.loadDeals();
+                    window.ui.closeModal();
+                    window.app.loadDeals();
                 }
             },
 
             moveDeal: async (id, newStage) => {
+                if(!supabase) return;
                 await supabase.from('deals').update({ stage: newStage }).eq('id', id);
-                app.loadDeals(); // Recarrega para atualizar totais
+                window.app.loadDeals();
             },
 
             saveSettings: () => {
-                localStorage.setItem('crm_sb_url', document.getElementById('sbUrl').value);
-                localStorage.setItem('crm_sb_key', document.getElementById('sbKey').value);
+                const url = document.getElementById('sbUrl').value.trim();
+                const key = document.getElementById('sbKey').value.trim();
+                
+                if(!url || !key) {
+                    alert("Por favor, preencha a URL e a Key do Supabase.");
+                    return;
+                }
+
+                localStorage.setItem('crm_sb_url', url);
+                localStorage.setItem('crm_sb_key', key);
                 localStorage.setItem('crm_cw_url', document.getElementById('cwUrl').value);
+                
+                alert("Configurações salvas! A página será recarregada.");
                 location.reload();
             },
 
             exportCSV: async () => {
+                if(!supabase) return;
                 const { data } = await supabase.from('deals').select('*');
-                if(!data) return;
+                if(!data || data.length === 0) {
+                    alert("Nenhum dado para exportar.");
+                    return;
+                }
                 
                 let csv = 'ID,Data,Titulo,Valor,Etapa,Status,Chatwoot ID,Notas\n';
                 data.forEach(row => {
-                    csv += `${row.id},${row.created_at},"${row.title}",${row.value},${row.stage},${row.status},${row.chatwoot_id || ''},"${row.notes || ''}"\n`;
+                    // Trata aspas e quebras de linha nas notas para não quebrar o CSV
+                    const safeNotes = (row.notes || '').replace(/"/g, '""').replace(/\n/g, ' ');
+                    const safeTitle = (row.title || '').replace(/"/g, '""');
+                    
+                    csv += `${row.id},${row.created_at},"${safeTitle}",${row.value},${row.stage},${row.status},${row.chatwoot_id || ''},"${safeNotes}"\n`;
                 });
 
-                const blob = new Blob([csv], { type: 'text/csv' });
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `crm_export_${new Date().toISOString().slice(0,10)}.csv`;
+                document.body.appendChild(a);
                 a.click();
+                document.body.removeChild(a);
             },
             
             archiveDeal: async () => {
                 const id = document.getElementById('dealId').value;
-                if(!id) return;
-                const status = confirm("Marcar como GANHO? (OK = Ganho, Cancelar = Perdido/Arquivar)") ? 'won' : 'lost';
+                if(!id || !supabase) return;
+                const status = confirm("Marcar como GANHO? (OK = Ganho, Cancelar = Perdido)") ? 'won' : 'lost';
                 
                 await supabase.from('deals').update({ status: 'archived', notes: `[${status.toUpperCase()}] ` + document.getElementById('dealNotes').value }).eq('id', id);
-                ui.closeModal();
-                app.loadDeals();
+                window.ui.closeModal();
+                window.app.loadDeals();
             },
             
-            // Simulação de busca no Chatwoot (para mostrar nome se tiver ID)
             fetchChatInfo: async () => {
                 const id = document.getElementById('dealChatId').value;
                 if(!id) return;
@@ -245,7 +296,8 @@
             }
         };
 
-        const ui = {
+        // --- LÓGICA VISUAL (UI) ---
+        window.ui = {
             renderBoard: () => {
                 const board = document.getElementById('board');
                 board.innerHTML = '';
@@ -260,25 +312,26 @@
                             </div>
                             <span class="count bg-white px-2 py-0.5 rounded-full text-[10px] font-bold text-gray-500 shadow-sm border">0</span>
                         </div>
-                        <div class="kanban-list flex-1 bg-gray-100/50 rounded-xl p-2 space-y-3 overflow-y-auto border border-gray-200/60 custom-scrollbar" id="col-${key}" data-stage="${key}">
-                            </div>
+                        <div class="kanban-list flex-1 bg-gray-100/50 rounded-xl p-2 space-y-3 overflow-y-auto border border-gray-200/60 custom-scrollbar" id="col-${key}" data-stage="${key}"></div>
                     `;
                     board.appendChild(col);
 
-                    // Drag & Drop
-                    new Sortable(col.querySelector('.kanban-list'), {
-                        group: 'deals',
-                        animation: 150,
-                        ghostClass: 'ghost-card',
-                        onEnd: (evt) => {
-                            const item = evt.item;
-                            const newStage = evt.to.dataset.stage;
-                            const oldStage = evt.from.dataset.stage;
-                            if (newStage !== oldStage) {
-                                app.moveDeal(item.dataset.id, newStage);
+                    // Inicializa Drag & Drop com segurança
+                    if(typeof Sortable !== 'undefined') {
+                        new Sortable(col.querySelector('.kanban-list'), {
+                            group: 'deals',
+                            animation: 150,
+                            ghostClass: 'ghost-card',
+                            onEnd: (evt) => {
+                                const item = evt.item;
+                                const newStage = evt.to.dataset.stage;
+                                const oldStage = evt.from.dataset.stage;
+                                if (newStage !== oldStage) {
+                                    window.app.moveDeal(item.dataset.id, newStage);
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 });
             },
 
@@ -287,18 +340,16 @@
                 el.className = 'deal-card bg-white p-4 rounded-lg shadow-sm border border-gray-100 cursor-pointer transition-all relative group';
                 el.dataset.id = deal.id;
                 el.onclick = (e) => {
-                    if(!e.target.closest('.action-btn')) ui.editDeal(deal);
+                    if(!e.target.closest('.action-btn')) window.ui.editDeal(deal);
                 };
 
                 const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(deal.value);
                 const date = new Date(deal.created_at).toLocaleDateString('pt-BR');
                 
-                // Link do Chatwoot se existir
                 const chatLink = deal.chatwoot_id 
                     ? `<a href="${config.cwUrl}/app/accounts/1/conversations/${deal.chatwoot_id}" target="_blank" class="action-btn text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 flex items-center gap-1">💬 Chat #${deal.chatwoot_id}</a>` 
                     : '';
 
-                // Badge de prioridade
                 const prioColors = { low: 'bg-green-100 text-green-700', medium: 'bg-yellow-100 text-yellow-700', high: 'bg-red-100 text-red-700' };
                 
                 el.innerHTML = `
@@ -357,7 +408,10 @@
             }
         };
 
-        document.addEventListener('DOMContentLoaded', app.init);
+        // Inicialização Segura
+        document.addEventListener('DOMContentLoaded', window.app.init);
+
     </script>
 </body>
 </html>
+
