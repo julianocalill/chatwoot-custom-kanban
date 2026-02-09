@@ -219,7 +219,7 @@
                 window.ui.updateCounts();
             },
 
-            // --- A MÁGICA DA IMPORTAÇÃO ---
+            // --- A MÁGICA DA IMPORTAÇÃO (CORRIGIDO DATA) ---
             fetchChatwootData: async () => {
                 const query = document.getElementById('dealPhone').value.trim();
                 if(!query) return alert("Digite um telefone ou ID para buscar.");
@@ -246,9 +246,12 @@
                              if(convRes.ok) {
                                  let convJson = await convRes.json();
                                  contact = convJson.meta.sender;
-                                 // Salva dados da conversa
+                                 // Salva dados da conversa (COM CORREÇÃO DE DATA)
                                  document.getElementById('dealChatId').value = convJson.id;
-                                 document.getElementById('conversationStart').value = convJson.created_at;
+                                 if(convJson.created_at) {
+                                    // Converte segundos unix para data ISO
+                                    document.getElementById('conversationStart').value = new Date(convJson.created_at * 1000).toISOString();
+                                 }
                                  document.getElementById('dealChannel').value = convJson.meta.channel || 'api';
                              }
                         }
@@ -259,7 +262,7 @@
                         document.getElementById('dealEmail').value = contact.email || '';
                         document.getElementById('dealPhone').value = contact.phone_number || query;
                         
-                        // Tenta achar a empresa (Atributo customizado ou objeto company)
+                        // Tenta achar a empresa
                         if(contact.additional_attributes && contact.additional_attributes.company_name) {
                             document.getElementById('dealCompany').value = contact.additional_attributes.company_name;
                         } else if (contact.company) {
@@ -274,11 +277,13 @@
                                  const lastConv = convsJson.payload[0];
                                  document.getElementById('dealChatId').value = lastConv.id;
                                  document.getElementById('dealChannel').value = lastConv.meta.channel;
-                                 document.getElementById('conversationStart').value = lastConv.created_at; // Timestamp da criação
+                                 if(lastConv.created_at) {
+                                    // Converte segundos unix para data ISO (CORREÇÃO AQUI TAMBEM)
+                                    document.getElementById('conversationStart').value = new Date(lastConv.created_at * 1000).toISOString();
+                                 }
                              }
                         }
                         
-                        // Icone de sucesso visual
                         btn.className = "px-4 bg-green-600 text-white rounded-lg font-medium shadow-sm flex items-center gap-2";
                         btn.innerHTML = '<i class="fa-solid fa-check"></i> Encontrado!';
                         setTimeout(() => {
@@ -313,7 +318,7 @@
                     channel: document.getElementById('dealChannel').value,
                     meeting_date: document.getElementById('dealMeeting').value || null,
                     closing_date: document.getElementById('dealClosing').value || null,
-                    conversation_start: document.getElementById('conversationStart').value || null, // Novo campo
+                    conversation_start: document.getElementById('conversationStart').value || null,
                     notes: document.getElementById('dealNotes').value,
                 };
 
@@ -440,7 +445,6 @@
                     timeBadge = `<span class="text-[10px] text-gray-400 flex items-center gap-1" title="Dias desde o início"><i class="fa-regular fa-clock"></i> ${days}d</span>`;
                 }
 
-                // Link para Chat (Corrigido)
                 const chatLink = deal.chatwoot_id 
                     ? `<a href="${config.cwUrl}/app/accounts/${config.cwAccount}/conversations/${deal.chatwoot_id}" target="_blank" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 flex items-center gap-1 font-medium" onclick="event.stopPropagation()">
                         <i class="fa-regular fa-comments"></i> Abrir Chat
@@ -503,6 +507,12 @@
                     document.getElementById('cwToken').value = config.cwToken;
                     document.getElementById('cwAccount').value = config.cwAccount;
                 }
+            },
+            
+            updateCounts: () => {
+                document.querySelectorAll('.kanban-list').forEach(list => {
+                    list.previousElementSibling.querySelector('.count').innerText = list.children.length;
+                });
             }
         };
 
