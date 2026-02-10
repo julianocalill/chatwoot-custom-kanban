@@ -268,6 +268,7 @@
                     if(t.action_type === 'criacao') { icon = 'fa-plus'; color = 'bg-green-100 text-green-600'; }
                     if(t.action_type === 'mudanca_etapa') { icon = 'fa-arrow-right'; color = 'bg-purple-100 text-purple-600'; }
                     if(t.action_type === 'perda') { icon = 'fa-thumbs-down'; color = 'bg-red-100 text-red-600'; }
+                    if(t.action_type === 'edicao') { icon = 'fa-pen'; color = 'bg-yellow-100 text-yellow-600'; }
 
                     return `
                         <div class="flex gap-3 animate-fade-in">
@@ -316,12 +317,11 @@
                     deal.stage = deal.stage || 'prospeccao';
                     const { data, error } = await window.app.supabase.from('deals').insert([deal]).select();
                     if(error) return alert(error.message);
-                    dealId = data[0].id;
-                    // Log criação
-                    await window.app.supabase.from('timeline').insert([{ deal_id: dealId, action_type: 'criacao', description: 'Negócio criado.' }]);
+                    dealId = data[0].id; 
+                    // Obs: A criação é logada pelo TRIGGER agora, não precisamos inserir na timeline manual aqui, 
+                    // a menos que queiramos forçar refresh imediato.
                 } else {
                     await window.app.supabase.from('deals').update(deal).eq('id', id);
-                    // Log edição simples (opcional, pode poluir)
                 }
 
                 window.ui.closeModal();
@@ -340,7 +340,6 @@
                 }
             },
 
-            // FLUXO DE PERDA E MUDANÇA
             moveDeal: async (id, newStage, oldStage) => {
                 if(newStage === 'perdido') {
                     window.app.pendingDrag = id;
@@ -348,7 +347,6 @@
                     document.getElementById('selectReasonModal').classList.remove('hidden');
                 } else {
                     await window.app.supabase.from('deals').update({ stage: newStage }).eq('id', id);
-                    await window.app.supabase.from('timeline').insert([{ deal_id: id, action_type: 'mudanca_etapa', description: `Moveu de ${config.stages[oldStage].title} para ${config.stages[newStage].title}` }]);
                     if(newStage === 'ganho') window.app.triggerConfetti();
                     window.app.loadDeals();
                 }
@@ -360,7 +358,6 @@
                 let id = window.app.pendingDrag || document.getElementById('dealId').value;
                 
                 await window.app.supabase.from('deals').update({ stage: 'perdido', loss_reason: r }).eq('id', id);
-                await window.app.supabase.from('timeline').insert([{ deal_id: id, action_type: 'perda', description: `Marcado como Perdido. Motivo: ${r}` }]);
                 
                 window.app.pendingDrag = null;
                 document.getElementById('selectReasonModal').classList.add('hidden');
@@ -419,18 +416,13 @@
                 const val = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.value);
                 const date = new Date(d.created_at).toLocaleDateString('pt-BR').slice(0,5);
                 
-                // Badge de Perda
                 let lossBadge = (d.stage === 'perdido' && d.loss_reason) ? `<div class="text-[10px] bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-0.5 rounded border border-red-200 dark:border-red-800 font-bold mb-2 inline-block"><i class="fa-solid fa-thumbs-down"></i> ${d.loss_reason}</div>` : '';
-                
-                // Produto
                 let productBadge = d.product ? `<span class="text-[10px] bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded border border-orange-200 dark:border-orange-800 font-semibold mb-2 inline-block ml-1"><i class="fa-solid fa-box"></i> ${d.product}</span>` : '';
-
-                // Datas Importantes
+                
                 let datesHtml = '';
                 if(d.meeting_date) datesHtml += `<div class="text-[10px] bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded border border-yellow-100 dark:border-yellow-800 flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${new Date(d.meeting_date).toLocaleDateString().slice(0,5)}</div>`;
                 if(d.closing_date) datesHtml += `<div class="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-1 rounded border border-purple-200 dark:border-purple-800 flex items-center gap-1"><i class="fa-solid fa-flag-checkered"></i> ${new Date(d.closing_date).toLocaleDateString().slice(0,5)}</div>`;
 
-                // Botão Chat
                 let chatLink = d.chatwoot_id ? `<a href="${config.cwUrl}/app/accounts/${config.cwAccount}/conversations/${d.chatwoot_id}" target="_blank" class="text-xs bg-slate-700 text-white px-3 py-1.5 rounded hover:bg-slate-600 flex items-center gap-2 font-medium" onclick="event.stopPropagation()"><i class="fa-regular fa-comments"></i> Chat</a>` : '';
 
                 el.innerHTML = `
@@ -466,7 +458,7 @@
                 document.getElementById('btnLoss').classList.remove('hidden');
                 document.getElementById('btnWin').classList.remove('hidden');
                 
-                window.app.loadTimeline(d.id); // Carrega a timeline
+                window.app.loadTimeline(d.id); 
                 document.getElementById('dealModal').classList.remove('hidden');
             },
             openModal: () => { 
@@ -481,7 +473,7 @@
             },
             closeModal: () => document.getElementById('dealModal').classList.add('hidden'),
             
-            // Auxiliares (Products/Reasons/Settings) - Mantidos iguais
+            // Auxiliares (Products/Reasons/Settings)
             openProductsModal: () => { document.getElementById('productsModal').classList.remove('hidden'); window.ui.renderProductsList(); },
             renderProductsList: () => document.getElementById('productsList').innerHTML = window.app.products.map(p => `<div class="flex justify-between bg-gray-50 dark:bg-slate-700 p-2 rounded"><span class="dark:text-white">${p.name}</span><button onclick="window.app.deleteAux('products', ${p.id}, window.app.loadProducts)" class="text-red-400"><i class="fa-solid fa-trash"></i></button></div>`).join(''),
             renderProductSelect: () => document.getElementById('dealProduct').innerHTML = '<option value="">Selecione...</option>' + window.app.products.map(p => `<option value="${p.name}">${p.name}</option>`).join(''),
@@ -495,7 +487,7 @@
             updateCounts: () => document.querySelectorAll('.kanban-list').forEach(l => l.previousElementSibling.querySelector('.count').innerText = l.children.length)
         };
 
-        // RELATÓRIOS (Mantido)
+        // RELATÓRIOS
         window.app.openReports = () => {
             document.getElementById('reportsModal').classList.remove('hidden');
             const deals = window.app.deals;
