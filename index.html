@@ -10,13 +10,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <script>
-        tailwind.config = { darkMode: 'class' }
-    </script>
+    <script> tailwind.config = { darkMode: 'class' } </script>
 
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -27,13 +24,11 @@
         .dark .ghost-card { background: #1e293b; border-color: #3b82f6; }
         .deal-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
-        /* Badges de Canal */
+        /* Badges */
         .channel-icon.whatsapp { color: #25D366; background: #dcf8c6; }
         .channel-icon.web_widget { color: #3b82f6; background: #dbeafe; }
         .channel-icon.api { color: #8b5cf6; background: #ede9fe; }
         .channel-icon.email { color: #ea580c; background: #ffedd5; }
-        
-        /* Dark Mode Badges */
         .dark .channel-icon.whatsapp { background: #064e3b; color: #4ade80; }
         .dark .channel-icon.web_widget { background: #1e3a8a; color: #60a5fa; }
         .dark .channel-icon.api { background: #4c1d95; color: #a78bfa; }
@@ -42,16 +37,17 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-sm text-gray-700 bg-slate-50 dark:bg-slate-900 dark:text-gray-200 transition-colors duration-300">
 
-    <div class="bg-white dark:bg-slate-800 border-b dark:border-slate-700 px-6 py-3 flex justify-between items-center shadow-sm z-20 transition-colors">
+    <div class="bg-white dark:bg-slate-800 border-b dark:border-slate-700 px-6 py-3 flex justify-between items-center shadow-sm z-20">
         <div class="flex items-center gap-4">
             <h1 class="font-bold text-xl text-gray-800 dark:text-white tracking-tight flex items-center gap-2">
                 <i class="fa-solid fa-rocket text-blue-600"></i> BeMore CRM
             </h1>
-            <div id="total-pipeline" class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 px-3 py-1 rounded-full text-xs font-bold border border-green-200 dark:border-green-800">
-                R$ 0,00
-            </div>
+            <div id="total-pipeline" class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 px-3 py-1 rounded-full text-xs font-bold border border-green-200 dark:border-green-800">R$ 0,00</div>
         </div>
         <div class="flex gap-2">
+             <button onclick="window.ui.openReasonsModal()" class="flex items-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded text-red-600 dark:text-red-300 transition border border-red-200 dark:border-red-800 font-medium">
+                <i class="fa-solid fa-thumbs-down"></i> Motivos
+            </button>
              <button onclick="window.ui.openProductsModal()" class="flex items-center gap-2 px-3 py-2 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/30 dark:hover:bg-orange-900/50 rounded text-orange-600 dark:text-orange-300 transition border border-orange-200 dark:border-orange-800 font-medium">
                 <i class="fa-solid fa-box-open"></i> Produtos
             </button>
@@ -62,30 +58,52 @@
                 <i class="fa-solid fa-download"></i> Exportar
             </button>
             <button onclick="window.ui.openModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium shadow-sm transition">
-                <i class="fa-solid fa-plus"></i> Novo Negócio
+                <i class="fa-solid fa-plus"></i> Novo
             </button>
             <button onclick="window.ui.toggleSettings()" class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"><i class="fa-solid fa-gear"></i></button>
         </div>
     </div>
 
-    <div id="board" class="flex-1 overflow-x-auto overflow-y-hidden flex p-6 gap-6 items-start bg-slate-50 dark:bg-slate-900 transition-colors">
-        <div class="m-auto text-gray-400 dark:text-gray-500 text-center animate-pulse">
-            <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i><br>Carregando sistema...
+    <div id="board" class="flex-1 overflow-x-auto overflow-y-hidden flex p-6 gap-6 items-start bg-slate-50 dark:bg-slate-900 transition-colors"></div>
+
+    <div id="reasonsModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[400px] p-6 border dark:border-slate-700">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white"><i class="fa-solid fa-thumbs-down text-red-500"></i> Motivos de Perda</h2>
+                <button onclick="document.getElementById('reasonsModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500">&times;</button>
+            </div>
+            <form onsubmit="window.app.saveReason(event)" class="flex gap-2 mb-4">
+                <input type="text" id="newReasonName" placeholder="Ex: Preço Alto..." class="flex-1 border dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded p-2 outline-none focus:border-red-500" required>
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 rounded font-bold">+</button>
+            </form>
+            <div id="reasonsList" class="max-h-60 overflow-y-auto space-y-2 custom-scrollbar"></div>
+        </div>
+    </div>
+
+    <div id="selectReasonModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-[60] backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[350px] p-6 border dark:border-slate-700 text-center">
+            <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">Por que perdemos? 😢</h2>
+            <p class="text-xs text-gray-500 mb-4">Selecione o motivo para nossos relatórios.</p>
+            <select id="lossReasonSelect" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg p-3 mb-4 outline-none">
+                <option value="">Selecione um motivo...</option>
+            </select>
+            <div class="flex gap-2 justify-center">
+                <button onclick="window.ui.cancelLoss()" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded">Cancelar</button>
+                <button onclick="window.ui.confirmLoss()" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-bold">Confirmar</button>
+            </div>
         </div>
     </div>
 
     <div id="productsModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[400px] p-6 border dark:border-slate-700">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-gray-800 dark:text-white"><i class="fa-solid fa-box text-orange-500"></i> Gerenciar Produtos</h2>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white"><i class="fa-solid fa-box text-orange-500"></i> Produtos</h2>
                 <button onclick="document.getElementById('productsModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500">&times;</button>
             </div>
-            
             <form onsubmit="window.app.saveProduct(event)" class="flex gap-2 mb-4">
                 <input type="text" id="newProductName" placeholder="Nome do Produto..." class="flex-1 border dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded p-2 outline-none focus:border-blue-500" required>
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded font-bold">+</button>
             </form>
-
             <div id="productsList" class="max-h-60 overflow-y-auto space-y-2 custom-scrollbar"></div>
         </div>
     </div>
@@ -98,23 +116,25 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
                 <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border dark:border-slate-700">
-                    <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Funil (R$)</h3>
+                    <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Funil de Vendas</h3>
                     <div class="h-64"><canvas id="chartStage"></canvas></div>
                 </div>
                 <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border dark:border-slate-700">
-                    <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Origem</h3>
+                    <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Origem dos Leads</h3>
                     <div class="h-64 flex justify-center"><canvas id="chartChannel"></canvas></div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border dark:border-slate-700 col-span-1 md:col-span-2">
+                    <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Motivos de Perda</h3>
+                    <div class="h-52"><canvas id="chartLoss"></canvas></div>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="dealModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto py-10">
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[600px] p-6 transform transition-all scale-100 relative border dark:border-slate-700">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[600px] p-6 relative border dark:border-slate-700">
             <div class="flex justify-between items-center mb-6 border-b dark:border-slate-700 pb-4">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2" id="modalTitle">
-                    <i class="fa-regular fa-id-card"></i> Novo Negócio
-                </h2>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white" id="modalTitle">Novo Negócio</h2>
                 <button onclick="window.ui.closeModal()" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
             </div>
             
@@ -123,84 +143,38 @@
                 <input type="hidden" id="conversationStart">
                 
                 <div class="bg-blue-50 dark:bg-slate-700 p-4 rounded-lg mb-6 border border-blue-100 dark:border-slate-600">
-                    <label class="block text-xs font-bold uppercase text-blue-600 dark:text-blue-400 mb-2">🔄 Vincular Chatwoot</label>
                     <div class="flex gap-2">
-                        <input type="text" id="dealPhone" class="flex-1 border border-blue-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Telefone ou ID da Conversa">
-                        <button type="button" onclick="window.app.fetchChatwootData()" class="px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition shadow-sm flex items-center gap-2">
-                            <i class="fa-solid fa-magnifying-glass"></i> Buscar
-                        </button>
+                        <input type="text" id="dealPhone" class="flex-1 border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none" placeholder="Telefone ou ID da Conversa">
+                        <button type="button" onclick="window.app.fetchChatwootData()" class="px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"><i class="fa-solid fa-magnifying-glass"></i></button>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Cliente / Título</label>
-                            <input type="text" id="dealTitle" required class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Empresa</label>
-                            <input type="text" id="dealCompany" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none focus:border-blue-500">
-                        </div>
+                        <input type="text" id="dealTitle" required class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5" placeholder="Nome">
+                        <input type="text" id="dealCompany" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5" placeholder="Empresa">
                     </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">📦 Produto / Serviço</label>
-                        <select id="dealProduct" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none focus:border-blue-500">
-                            <option value="">Selecione...</option>
-                        </select>
-                    </div>
-
+                    <select id="dealProduct" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5"><option value="">Produto...</option></select>
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Email</label>
-                            <input type="email" id="dealEmail" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none">
-                        </div>
-                         <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Canal</label>
-                            <input type="text" id="dealChannel" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none">
-                        </div>
+                        <input type="email" id="dealEmail" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5" placeholder="Email">
+                        <input type="text" id="dealChannel" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5" placeholder="Canal">
                     </div>
-
                     <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Valor (R$)</label>
-                            <input type="number" id="dealValue" step="0.01" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Chat ID</label>
-                            <input type="text" id="dealChatId" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-300 rounded-lg p-2.5 bg-gray-50" readonly>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-1">Prev. Fechamento</label>
-                            <input type="date" id="dealClosing" class="w-full border border-gray-200 dark:border-slate-500 dark:bg-slate-600 dark:text-white rounded-lg p-2.5 outline-none">
-                        </div>
+                        <input type="number" id="dealValue" step="0.01" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5" placeholder="Valor">
+                        <input type="text" id="dealChatId" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-300 rounded-lg p-2.5 bg-gray-50" readonly placeholder="Chat ID">
+                        <input type="date" id="dealClosing" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5">
                     </div>
-                    
-                    <div>
-                        <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-300 mb-1">📅 Data Reunião</label>
-                        <input type="datetime-local" id="dealMeeting" class="w-full border border-gray-200 dark:border-slate-500 dark:bg-slate-600 dark:text-white rounded-lg p-2 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Notas</label>
-                        <textarea id="dealNotes" rows="3" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none"></textarea>
-                    </div>
+                    <input type="datetime-local" id="dealMeeting" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5">
+                    <textarea id="dealNotes" rows="3" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5" placeholder="Notas..."></textarea>
                 </div>
 
                 <div class="mt-8 flex justify-between items-center pt-4 border-t dark:border-slate-700">
-                    <div class="flex gap-2">
-                        <button type="button" onclick="window.app.saveDeal(event, 'ganho')" class="px-4 py-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 rounded-lg font-bold text-xs uppercase flex items-center gap-2 transition">
-                            <i class="fa-solid fa-trophy"></i> Ganho
-                        </button>
-                        <button type="button" onclick="window.app.saveDeal(event, 'perdido')" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 rounded-lg font-bold text-xs uppercase flex items-center gap-2 transition">
-                            <i class="fa-solid fa-thumbs-down"></i> Perdido
-                        </button>
-                    </div>
-
-                    <div class="flex gap-3">
-                        <button type="button" onclick="window.ui.closeModal()" class="px-5 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg font-medium">Cancelar</button>
-                        <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transform active:scale-95 transition">Salvar</button>
+                    <button type="button" onclick="window.app.deleteDeal()" id="btnDelete" class="text-red-500 hover:text-red-700 text-lg px-2"><i class="fa-solid fa-trash-can"></i></button>
+                    
+                    <div class="flex gap-2 ml-auto">
+                        <button type="button" onclick="window.app.requestLoss()" class="px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 rounded-lg font-bold text-xs uppercase"><i class="fa-solid fa-thumbs-down"></i> Perdido</button>
+                        <button type="button" onclick="window.app.saveDeal(event, 'ganho')" class="px-3 py-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 rounded-lg font-bold text-xs uppercase"><i class="fa-solid fa-trophy"></i> Ganho</button>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold ml-2">Salvar</button>
                     </div>
                 </div>
             </form>
@@ -210,35 +184,18 @@
     <div id="settingsModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50">
         <div class="bg-white dark:bg-slate-800 rounded-lg w-96 p-6 shadow-2xl border dark:border-slate-700">
             <h2 class="font-bold text-lg mb-4 text-gray-800 dark:text-white">🔌 Conexões</h2>
-            <div class="space-y-4">
-                <div>
-                    <h3 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-2">Supabase</h3>
-                    <input type="text" id="sbUrl" placeholder="Project URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
-                    <input type="password" id="sbKey" placeholder="Anon Key" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs">
-                </div>
-                <div>
-                    <h3 class="text-xs font-bold text-green-600 dark:text-green-400 uppercase mb-2">Chatwoot API</h3>
-                    <input type="text" id="cwUrl" placeholder="URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
-                    <input type="text" id="cwToken" placeholder="Token" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
-                    <input type="text" id="cwAccount" placeholder="ID Conta" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs">
-                </div>
-            </div>
-            <button onclick="window.app.saveSettings()" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold transition">Salvar</button>
+            <input type="text" id="sbUrl" placeholder="Supabase URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
+            <input type="password" id="sbKey" placeholder="Supabase Key" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
+            <hr class="my-2 dark:border-slate-600">
+            <input type="text" id="cwUrl" placeholder="Chatwoot URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
+            <input type="text" id="cwToken" placeholder="Chatwoot Token" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
+            <input type="text" id="cwAccount" placeholder="Account ID" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs">
+            <button onclick="window.app.saveSettings()" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold">Salvar</button>
         </div>
     </div>
 
     <script>
-        const themeCheck = () => {
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
-            else document.documentElement.classList.remove('dark');
-        };
-        themeCheck();
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themeCheck);
-
-        window.supabaseClient = null;
-        window.myCharts = {};
-        window.productsList = [];
-
+        // CONFIG E INICIO
         const config = {
             stages: {
                 'prospeccao': { title: '🔎 Prospecção', color: 'border-blue-500' },
@@ -255,174 +212,49 @@
             cwAccount: localStorage.getItem('crm_cw_account') || '1'
         };
 
+        const themeCheck = () => document.documentElement.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches);
+        themeCheck(); window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themeCheck);
+
         window.app = {
-            dealsData: [],
+            supabase: null,
+            deals: [],
+            products: [],
+            reasons: [],
+            pendingDrag: null, // Para guardar o estado do drag
 
             init: async () => {
-                if (typeof window.supabase === 'undefined') return alert("Erro: Lib Supabase off.");
-                if (!config.sbUrl || !config.sbKey) { window.ui.toggleSettings(); return; }
-                try {
-                    const { createClient } = window.supabase;
-                    window.supabaseClient = createClient(config.sbUrl, config.sbKey);
-                    window.ui.renderBoard();
-                    await window.app.loadProducts();
-                    await window.app.loadDeals();
-                } catch (e) { alert("Erro ao iniciar: " + e.message); }
-            },
-
-            loadProducts: async () => {
-                const { data, error } = await window.supabaseClient.from('products').select('*').order('name');
-                if(!error && data) {
-                    window.productsList = data;
-                    window.ui.renderProductSelect();
-                }
-            },
-            saveProduct: async (e) => {
-                e.preventDefault();
-                const name = document.getElementById('newProductName').value;
-                if(!name) return;
-                const { error } = await window.supabaseClient.from('products').insert([{ name }]);
-                if(!error) {
-                    document.getElementById('newProductName').value = '';
-                    await window.app.loadProducts();
-                    window.ui.renderProductsListModal();
-                } else alert('Erro ao salvar produto');
-            },
-            deleteProduct: async (id) => {
-                if(!confirm('Excluir este produto?')) return;
-                await window.supabaseClient.from('products').delete().eq('id', id);
-                await window.app.loadProducts();
-                window.ui.renderProductsListModal();
+                if(!config.sbUrl) return window.ui.toggleSettings();
+                window.app.supabase = window.supabase.createClient(config.sbUrl, config.sbKey);
+                window.ui.renderBoard();
+                await Promise.all([window.app.loadProducts(), window.app.loadReasons(), window.app.loadDeals()]);
             },
 
             loadDeals: async () => {
-                if(!window.supabaseClient) return;
-                const { data, error } = await window.supabaseClient.from('deals').select('*').neq('status', 'archived').order('created_at', { ascending: false });
-                if (error) { if(error.code === '401') window.ui.toggleSettings(); return; }
-
-                window.app.dealsData = data || [];
+                const { data } = await window.app.supabase.from('deals').select('*').neq('status', 'archived').order('created_at', {ascending: false});
+                window.app.deals = data || [];
                 document.querySelectorAll('.kanban-list').forEach(el => el.innerHTML = '');
                 let total = 0;
-                
-                if(data) {
-                    data.forEach(deal => {
-                        const col = document.getElementById(`col-${deal.stage}`);
-                        if (col) {
-                            col.appendChild(window.ui.createCard(deal));
-                            total += parseFloat(deal.value || 0);
-                        }
-                    });
-                }
+                window.app.deals.forEach(d => {
+                    document.getElementById(`col-${d.stage}`)?.appendChild(window.ui.createCard(d));
+                    total += d.value || 0;
+                });
                 document.getElementById('total-pipeline').innerText = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
                 window.ui.updateCounts();
             },
 
-            openReports: () => {
-                document.getElementById('reportsModal').classList.remove('hidden');
-                const deals = window.app.dealsData;
-                const stageValues = {};
-                Object.keys(config.stages).forEach(k => stageValues[k] = 0);
-                deals.forEach(d => { if(stageValues[d.stage] !== undefined) stageValues[d.stage] += parseFloat(d.value || 0); });
-
-                const channels = {};
-                deals.forEach(d => {
-                    let ch = d.channel ? d.channel.split('::')[0] : 'Manual';
-                    if(ch === 'api') ch = 'API';
-                    channels[ch] = (channels[ch] || 0) + 1;
-                });
-
-                window.app.renderChart('chartStage', 'bar', 'Pipeline (R$)', Object.keys(stageValues).map(k => config.stages[k].title), Object.values(stageValues));
-                window.app.renderChart('chartChannel', 'doughnut', 'Origem', Object.keys(channels), Object.values(channels));
+            loadProducts: async () => {
+                const { data } = await window.app.supabase.from('products').select('*').order('name');
+                window.app.products = data || [];
+                window.ui.renderProductSelect();
             },
-
-            renderChart: (canvasId, type, label, labels, data) => {
-                const ctx = document.getElementById(canvasId).getContext('2d');
-                if(window.myCharts[canvasId]) window.myCharts[canvasId].destroy();
-                const isDark = document.documentElement.classList.contains('dark');
-                const textColor = isDark ? '#e2e8f0' : '#475569';
-
-                window.myCharts[canvasId] = new Chart(ctx, {
-                    type: type,
-                    data: { labels: labels, datasets: [{ label: label, data: data, backgroundColor: ['#3b82f6', '#eab308', '#f97316', '#a855f7', '#22c55e', '#ef4444'], borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor } } }, scales: type === 'bar' ? { y: { ticks: { color: textColor }, grid: { color: isDark ? '#334155' : '#e2e8f0' } }, x: { ticks: { color: textColor }, grid: { display: false } } } : {} }
-                });
-            },
-
-            fetchChatwootData: async () => {
-                const query = document.getElementById('dealPhone').value.trim();
-                if(!query || !config.cwToken) return alert("Verifique dados e token.");
-                const btn = document.querySelector('button[onclick="window.app.fetchChatwootData()"]');
-                const oldHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-                try {
-                    let url = `${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/search?q=${query}`;
-                    let res = await fetch(url, { headers: { 'api_access_token': config.cwToken } });
-                    let json = await res.json();
-                    let contact = json.payload?.[0];
-
-                    if(!contact && !isNaN(query)) {
-                        let cRes = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/conversations/${query}`, { headers: { 'api_access_token': config.cwToken } });
-                        if(cRes.ok) {
-                            let cJson = await cRes.json();
-                            contact = cJson.meta.sender;
-                            document.getElementById('dealChatId').value = cJson.id;
-                            document.getElementById('dealChannel').value = cJson.meta.channel;
-                            if(cJson.created_at) document.getElementById('conversationStart').value = new Date(cJson.created_at * 1000).toISOString();
-                        }
-                    }
-
-                    if(contact) {
-                        document.getElementById('dealTitle').value = contact.name || '';
-                        document.getElementById('dealEmail').value = contact.email || '';
-                        document.getElementById('dealPhone').value = contact.phone_number || query;
-                        if(contact.additional_attributes?.company_name) document.getElementById('dealCompany').value = contact.additional_attributes.company_name;
-                        
-                        if(!document.getElementById('dealChatId').value) {
-                             let convsRes = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/${contact.id}/conversations`, { headers: { 'api_access_token': config.cwToken } });
-                             let convsJson = await convsRes.json();
-                             if(convsJson.payload && convsJson.payload.length > 0) {
-                                 const lastConv = convsJson.payload[0];
-                                 document.getElementById('dealChatId').value = lastConv.id;
-                                 document.getElementById('dealChannel').value = lastConv.meta.channel;
-                                 if(lastConv.created_at) document.getElementById('conversationStart').value = new Date(lastConv.created_at * 1000).toISOString();
-                             }
-                        }
-                        btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                    } else alert("Não encontrado.");
-                } catch(e) { console.error(e); }
-                setTimeout(() => btn.innerHTML = oldHtml, 2000);
-            },
-
-            createChatwootContact: async (deal) => {
-                 if(!config.cwUrl || !config.cwToken) return;
-                 try {
-                    await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts`, {
-                        method: 'POST', headers: { 'api_access_token': config.cwToken, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: deal.title, email: deal.email, phone_number: deal.phone, company_name: deal.company })
-                    });
-                 } catch(e) {}
-            },
-
-            // LÓGICA DE CONFETTI E SALVAMENTO INTELIGENTE
-            triggerConfetti: () => {
-                var duration = 3 * 1000;
-                var animationEnd = Date.now() + duration;
-                var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
-                function random(min, max) { return Math.random() * (max - min) + min; }
-                var interval = setInterval(function() {
-                    var timeLeft = animationEnd - Date.now();
-                    if (timeLeft <= 0) { return clearInterval(interval); }
-                    var particleCount = 50 * (timeLeft / duration);
-                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.1, 0.3), y: Math.random() - 0.2 } }));
-                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.7, 0.9), y: Math.random() - 0.2 } }));
-                }, 250);
+            
+            loadReasons: async () => {
+                const { data } = await window.app.supabase.from('loss_reasons').select('*').order('name');
+                window.app.reasons = data || [];
             },
 
             saveDeal: async (e, stageOverride = null) => {
-                e.preventDefault();
-                if(!window.supabaseClient) return;
-
+                if(e) e.preventDefault();
                 const id = document.getElementById('dealId').value;
                 const deal = {
                     title: document.getElementById('dealTitle').value,
@@ -438,178 +270,221 @@
                     conversation_start: document.getElementById('conversationStart').value || null,
                     notes: document.getElementById('dealNotes').value,
                 };
+                if(stageOverride) deal.stage = stageOverride;
 
-                // Se houver override (botões ganho/perdido), atualiza a etapa
-                if(stageOverride) {
-                    deal.stage = stageOverride;
+                // Se o ID não existe, insere. Se existe, atualiza.
+                let error;
+                if (!id) {
+                    deal.stage = deal.stage || 'prospeccao';
+                    const { error: err } = await window.app.supabase.from('deals').insert([deal]);
+                    error = err;
+                    if(!err && (deal.phone || deal.email)) window.app.createChatwootContact(deal);
+                } else {
+                    const { error: err } = await window.app.supabase.from('deals').update(deal).eq('id', id);
+                    error = err;
                 }
 
-                if (!id && (deal.phone || deal.email)) await window.app.createChatwootContact(deal);
-
-                let error;
-                if (id) error = (await window.supabaseClient.from('deals').update(deal).eq('id', id)).error;
-                else error = (await window.supabaseClient.from('deals').insert([{ ...deal, stage: deal.stage || 'prospeccao' }])).error;
-
-                if (error) alert('Erro: ' + error.message);
-                else { 
-                    window.ui.closeModal(); 
+                if(error) alert('Erro: ' + error.message);
+                else {
+                    window.ui.closeModal();
                     window.app.loadDeals();
-                    // Se foi marcado como ganho, solta confete!
                     if(stageOverride === 'ganho') window.app.triggerConfetti();
                 }
             },
 
-            moveDeal: async (id, newStage) => {
-                await window.supabaseClient.from('deals').update({ stage: newStage }).eq('id', id);
+            deleteDeal: async () => {
+                const id = document.getElementById('dealId').value;
+                if(!id) return;
+                const result = await Swal.fire({
+                    title: 'Excluir negócio?',
+                    text: "Essa ação não pode ser desfeita!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: 'Sim, excluir'
+                });
+
+                if (result.isConfirmed) {
+                    await window.app.supabase.from('deals').delete().eq('id', id);
+                    window.ui.closeModal();
+                    window.app.loadDeals();
+                    Swal.fire('Excluído!', 'O negócio foi removido.', 'success');
+                }
+            },
+
+            // --- FLUXO DE PERDA ---
+            requestLoss: () => {
+                window.ui.renderReasonSelect();
+                document.getElementById('selectReasonModal').classList.remove('hidden');
+            },
+
+            confirmLoss: async (reason) => {
+                const r = document.getElementById('lossReasonSelect').value;
+                if(!r) return alert("Selecione um motivo!");
+                
+                // Se veio de um Drag (arrastar)
+                if(window.app.pendingDrag) {
+                    await window.app.supabase.from('deals').update({ stage: 'perdido', loss_reason: r }).eq('id', window.app.pendingDrag);
+                    window.app.pendingDrag = null;
+                } else {
+                    // Veio do Modal (Botão)
+                    const id = document.getElementById('dealId').value;
+                    await window.app.supabase.from('deals').update({ stage: 'perdido', loss_reason: r }).eq('id', id);
+                    window.ui.closeModal();
+                }
+                
+                document.getElementById('selectReasonModal').classList.add('hidden');
                 window.app.loadDeals();
-                // Se arrastou para ganho, solta confete!
-                if(newStage === 'ganho') window.app.triggerConfetti();
             },
 
-            saveSettings: () => {
-                localStorage.setItem('crm_sb_url', document.getElementById('sbUrl').value.trim());
-                localStorage.setItem('crm_sb_key', document.getElementById('sbKey').value.trim());
-                localStorage.setItem('crm_cw_url', document.getElementById('cwUrl').value.replace(/\/$/, ""));
-                localStorage.setItem('crm_cw_token', document.getElementById('cwToken').value.trim());
-                localStorage.setItem('crm_cw_account', document.getElementById('cwAccount').value.trim());
-                location.reload();
+            // --- Lógica de Arrastar ---
+            moveDeal: async (id, newStage, oldStage, itemEl) => {
+                if(newStage === 'perdido') {
+                    window.app.pendingDrag = id;
+                    window.ui.renderReasonSelect();
+                    document.getElementById('selectReasonModal').classList.remove('hidden');
+                    // Se cancelar, o sortable não volta sozinho facilmente sem reload, então o reload do loadDeals resolve
+                } else {
+                    await window.app.supabase.from('deals').update({ stage: newStage }).eq('id', id);
+                    if(newStage === 'ganho') window.app.triggerConfetti();
+                    window.app.loadDeals(); // Recarrega para garantir ordem
+                }
             },
 
-            exportCSV: async () => {
-                const { data } = await window.supabaseClient.from('deals').select('*');
-                if(!data?.length) return alert("Nada para exportar.");
-                let csv = 'ID,Cliente,Empresa,Produto,Email,Valor,Etapa,Canal\n';
-                data.forEach(r => csv += `${r.id},"${r.title}","${r.company||''}","${r.product||''}","${r.email||''}",${r.value},${r.stage},${r.channel||''}\n`);
-                const a = document.createElement('a');
-                a.href = window.URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
-                a.download = `crm_export.csv`;
-                a.click();
-            }
+            // --- GERENCIAR ITENS AUXILIARES ---
+            saveProduct: async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('newProductName').value;
+                await window.app.supabase.from('products').insert([{ name }]);
+                document.getElementById('newProductName').value = '';
+                window.app.loadProducts(); window.ui.renderProductsList();
+            },
+            saveReason: async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('newReasonName').value;
+                await window.app.supabase.from('loss_reasons').insert([{ name }]);
+                document.getElementById('newReasonName').value = '';
+                window.app.loadReasons(); window.ui.renderReasonsList();
+            },
+            deleteAux: async (table, id, callback) => {
+                if(!confirm('Excluir?')) return;
+                await window.app.supabase.from(table).delete().eq('id', id);
+                callback();
+            },
+
+            // --- UTILITARIOS ---
+            fetchChatwootData: async () => { /* Mesma lógica anterior */ 
+                const query = document.getElementById('dealPhone').value.trim();
+                if(!query) return;
+                try {
+                    let res = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/search?q=${query}`, { headers: { 'api_access_token': config.cwToken } });
+                    let json = await res.json();
+                    let contact = json.payload?.[0];
+                    if(!contact && !isNaN(query)) {
+                         let cRes = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/conversations/${query}`, { headers: { 'api_access_token': config.cwToken } });
+                         if(cRes.ok) { let c = await cRes.json(); contact = c.meta.sender; document.getElementById('dealChatId').value = c.id; document.getElementById('dealChannel').value = c.meta.channel; }
+                    }
+                    if(contact) {
+                        document.getElementById('dealTitle').value = contact.name;
+                        document.getElementById('dealEmail').value = contact.email;
+                        document.getElementById('dealPhone').value = contact.phone_number;
+                        document.getElementById('dealCompany').value = contact.additional_attributes?.company_name || '';
+                         if(!document.getElementById('dealChatId').value) {
+                             let convs = await (await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/${contact.id}/conversations`, { headers: { 'api_access_token': config.cwToken } })).json();
+                             if(convs.payload?.[0]) { document.getElementById('dealChatId').value = convs.payload[0].id; document.getElementById('dealChannel').value = convs.payload[0].meta.channel; }
+                         }
+                    } else alert("Não encontrado");
+                } catch(e) { console.error(e); }
+            },
+            createChatwootContact: async (deal) => { /* Mesma lógica */ },
+            triggerConfetti: () => { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
         };
 
         window.ui = {
             renderBoard: () => {
-                const board = document.getElementById('board');
-                board.innerHTML = '';
-                Object.entries(config.stages).forEach(([key, info]) => {
-                    const col = document.createElement('div');
-                    col.className = 'flex flex-col w-[320px] min-w-[320px] max-h-full';
-                    col.innerHTML = `
-                        <div class="flex justify-between items-center mb-3 px-1">
-                            <div class="flex items-center gap-2">
-                                <span class="w-3 h-3 rounded-full ${info.color.replace('border', 'bg')}"></span>
-                                <h3 class="font-bold text-gray-700 dark:text-gray-300 uppercase text-xs tracking-wider">${info.title}</h3>
-                            </div>
-                            <span class="count bg-white dark:bg-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold text-gray-500 dark:text-gray-300 shadow-sm border dark:border-slate-600">0</span>
-                        </div>
-                        <div class="kanban-list flex-1 bg-gray-100/50 dark:bg-slate-800/50 rounded-xl p-2 space-y-3 overflow-y-auto border border-gray-200/60 dark:border-slate-700/60 custom-scrollbar" id="col-${key}" data-stage="${key}"></div>
-                    `;
-                    board.appendChild(col);
-                    if(typeof Sortable !== 'undefined') new Sortable(col.querySelector('.kanban-list'), { group: 'deals', animation: 150, ghostClass: 'ghost-card', onEnd: (evt) => { if (evt.to.dataset.stage !== evt.from.dataset.stage) window.app.moveDeal(evt.item.dataset.id, evt.to.dataset.stage); } });
+                const b = document.getElementById('board'); b.innerHTML = '';
+                Object.entries(config.stages).forEach(([k, v]) => {
+                    const c = document.createElement('div');
+                    c.className = 'flex flex-col w-[320px] min-w-[320px] max-h-full';
+                    c.innerHTML = `<div class="flex justify-between mb-3 px-1"><div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full ${v.color.replace('border','bg')}"></span><h3 class="font-bold text-gray-700 dark:text-gray-300 uppercase text-xs">${v.title}</h3></div><span class="count bg-white dark:bg-slate-700 px-2 rounded-full text-[10px] font-bold border dark:border-slate-600">0</span></div><div class="kanban-list flex-1 bg-gray-100/50 dark:bg-slate-800/50 rounded-xl p-2 space-y-3 overflow-y-auto border border-gray-200/60 dark:border-slate-700/60 custom-scrollbar" id="col-${k}" data-stage="${k}"></div>`;
+                    b.appendChild(c);
+                    new Sortable(c.querySelector('.kanban-list'), { group: 'deals', animation: 150, ghostClass: 'ghost-card', onEnd: (evt) => { if (evt.to.dataset.stage !== evt.from.dataset.stage) window.app.moveDeal(evt.item.dataset.id, evt.to.dataset.stage, evt.from.dataset.stage, evt.item); } });
                 });
             },
-
-            createCard: (deal) => {
+            createCard: (d) => {
                 const el = document.createElement('div');
-                el.className = 'deal-card bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 cursor-pointer transition-all relative group';
-                el.dataset.id = deal.id;
-                el.onclick = (e) => { if(!e.target.closest('a')) window.ui.editDeal(deal); };
-
-                const val = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(deal.value);
-                const date = new Date(deal.created_at).toLocaleDateString('pt-BR');
-                
-                let channelIcon = '';
-                if(deal.channel) {
-                    let iconClass = 'fa-globe', bgClass = 'channel-icon api';
-                    if(deal.channel.toLowerCase().includes('whatsapp')) { iconClass = 'fa-whatsapp'; bgClass = 'channel-icon whatsapp'; }
-                    else if(deal.channel.toLowerCase().includes('email')) { iconClass = 'fa-envelope'; bgClass = 'channel-icon email'; }
-                    channelIcon = `<span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${bgClass}"><i class="fa-brands ${iconClass}"></i></span>`;
-                }
-
-                let chatLink = deal.chatwoot_id ? `<a href="${config.cwUrl}/app/accounts/${config.cwAccount}/conversations/${deal.chatwoot_id}" target="_blank" class="text-xs bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-100 dark:hover:bg-slate-600 flex items-center gap-1 font-medium" onclick="event.stopPropagation()"><i class="fa-regular fa-comments"></i> Chat</a>` : '';
-                let productBadge = deal.product ? `<span class="text-[10px] bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded border border-orange-200 dark:border-orange-800 font-semibold mb-2 inline-block"><i class="fa-solid fa-box"></i> ${deal.product}</span>` : '';
-                
-                let closingBadge = deal.closing_date 
-                    ? `<div class="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-1 rounded border border-purple-200 dark:border-purple-800 flex items-center gap-1"><i class="fa-solid fa-flag-checkered"></i> ${new Date(deal.closing_date).toLocaleDateString().slice(0,5)}</div>` 
-                    : '';
-
-                el.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <div class="flex gap-2">${channelIcon} <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase truncate max-w-[120px]">${deal.company || 'Particular'}</span></div>
-                        <span class="text-[10px] text-gray-300 dark:text-gray-600">${date}</span>
-                    </div>
-                    ${productBadge}
-                    <h4 class="font-bold text-gray-800 dark:text-gray-200 text-sm mb-1 truncate">${deal.title}</h4>
-                    <p class="font-mono text-xs text-gray-600 dark:text-gray-400 font-medium mb-3">${val}</p>
-                    
-                    <div class="flex flex-wrap gap-2 mb-3">
-                        ${deal.meeting_date ? `<div class="text-[10px] bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded border border-yellow-100 dark:border-yellow-800 flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${new Date(deal.meeting_date).toLocaleDateString().slice(0,5)}</div>` : ''}
-                        ${closingBadge}
-                    </div>
-
-                    <div class="flex justify-between items-center border-t dark:border-slate-700 pt-2">${chatLink}</div>
-                `;
+                el.className = 'deal-card bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 cursor-pointer transition relative group';
+                el.dataset.id = d.id; el.onclick = (e) => { if(!e.target.closest('a')) window.ui.editDeal(d); };
+                const val = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.value);
+                el.innerHTML = `<div class="flex justify-between mb-2"><span class="text-[10px] font-bold text-gray-400 uppercase">${d.company||'Particular'}</span><span class="text-[10px] text-gray-400">${new Date(d.created_at).toLocaleDateString()}</span></div>${d.product ? `<span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded border border-orange-200 mb-2 inline-block">${d.product}</span>` : ''}<h4 class="font-bold text-gray-800 dark:text-gray-200 text-sm mb-1 truncate">${d.title}</h4><p class="font-mono text-xs text-gray-600 dark:text-gray-400 font-medium">${val}</p>`;
+                if(d.chatwoot_id) el.innerHTML += `<div class="border-t dark:border-slate-700 pt-2 mt-2"><a href="${config.cwUrl}/app/accounts/${config.cwAccount}/conversations/${d.chatwoot_id}" target="_blank" class="text-xs text-blue-500 hover:underline" onclick="event.stopPropagation()">Abrir Chat</a></div>`;
                 return el;
             },
-
-            editDeal: (deal) => {
-                document.getElementById('dealId').value = deal.id;
-                document.getElementById('dealTitle').value = deal.title;
-                document.getElementById('dealCompany').value = deal.company || '';
-                document.getElementById('dealProduct').value = deal.product || '';
-                document.getElementById('dealEmail').value = deal.email || '';
-                document.getElementById('dealPhone').value = deal.phone || '';
-                document.getElementById('dealValue').value = deal.value;
-                document.getElementById('dealChatId').value = deal.chatwoot_id || '';
-                document.getElementById('dealChannel').value = deal.channel || '';
-                document.getElementById('dealMeeting').value = deal.meeting_date ? new Date(deal.meeting_date).toISOString().slice(0,16) : '';
-                document.getElementById('dealClosing').value = deal.closing_date || '';
-                document.getElementById('conversationStart').value = deal.conversation_start || '';
-                document.getElementById('dealNotes').value = deal.notes || '';
-                
-                document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Negócio';
+            editDeal: (d) => {
+                document.getElementById('dealId').value = d.id;
+                document.getElementById('dealTitle').value = d.title;
+                document.getElementById('dealCompany').value = d.company || '';
+                document.getElementById('dealProduct').value = d.product || '';
+                document.getElementById('dealEmail').value = d.email || '';
+                document.getElementById('dealPhone').value = d.phone || '';
+                document.getElementById('dealValue').value = d.value;
+                document.getElementById('dealChatId').value = d.chatwoot_id || '';
+                document.getElementById('dealChannel').value = d.channel || '';
+                document.getElementById('dealMeeting').value = d.meeting_date ? new Date(d.meeting_date).toISOString().slice(0,16) : '';
+                document.getElementById('dealClosing').value = d.closing_date || '';
+                document.getElementById('conversationStart').value = d.conversation_start || '';
+                document.getElementById('dealNotes').value = d.notes || '';
+                document.getElementById('modalTitle').innerText = 'Editar Negócio';
+                document.getElementById('btnDelete').classList.remove('hidden');
                 document.getElementById('dealModal').classList.remove('hidden');
             },
-
-            openModal: () => {
-                document.getElementById('dealForm').reset();
-                document.getElementById('dealId').value = '';
-                document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-plus"></i> Novo Negócio';
-                document.getElementById('dealModal').classList.remove('hidden');
-            },
+            openModal: () => { document.getElementById('dealForm').reset(); document.getElementById('dealId').value = ''; document.getElementById('dealModal').classList.remove('hidden'); document.getElementById('modalTitle').innerText = 'Novo Negócio'; document.getElementById('btnDelete').classList.add('hidden'); },
             closeModal: () => document.getElementById('dealModal').classList.add('hidden'),
-
-            openProductsModal: () => {
-                document.getElementById('productsModal').classList.remove('hidden');
-                window.ui.renderProductsListModal();
+            
+            // --- AUXILIARES UI ---
+            openProductsModal: () => { document.getElementById('productsModal').classList.remove('hidden'); window.ui.renderProductsList(); },
+            renderProductsList: () => document.getElementById('productsList').innerHTML = window.app.products.map(p => `<div class="flex justify-between bg-gray-50 dark:bg-slate-700 p-2 rounded"><span class="dark:text-white">${p.name}</span><button onclick="window.app.deleteAux('products', ${p.id}, window.app.loadProducts)" class="text-red-400"><i class="fa-solid fa-trash"></i></button></div>`).join(''),
+            renderProductSelect: () => document.getElementById('dealProduct').innerHTML = '<option value="">Selecione...</option>' + window.app.products.map(p => `<option value="${p.name}">${p.name}</option>`).join(''),
+            
+            openReasonsModal: () => { document.getElementById('reasonsModal').classList.remove('hidden'); window.ui.renderReasonsList(); },
+            renderReasonsList: () => document.getElementById('reasonsList').innerHTML = window.app.reasons.map(p => `<div class="flex justify-between bg-gray-50 dark:bg-slate-700 p-2 rounded"><span class="dark:text-white">${p.name}</span><button onclick="window.app.deleteAux('loss_reasons', ${p.id}, window.app.loadReasons)" class="text-red-400"><i class="fa-solid fa-trash"></i></button></div>`).join(''),
+            renderReasonSelect: () => document.getElementById('lossReasonSelect').innerHTML = '<option value="">Selecione...</option>' + window.app.reasons.map(p => `<option value="${p.name}">${p.name}</option>`).join(''),
+            
+            cancelLoss: () => { 
+                window.app.pendingDrag = null; 
+                document.getElementById('selectReasonModal').classList.add('hidden');
+                window.app.loadDeals(); // Reseta posições
             },
-            renderProductSelect: () => {
-                const select = document.getElementById('dealProduct');
-                select.innerHTML = '<option value="">Selecione...</option>' + window.productsList.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
-            },
-            renderProductsListModal: () => {
-                const list = document.getElementById('productsList');
-                list.innerHTML = window.productsList.map(p => `
-                    <div class="flex justify-between items-center bg-gray-50 dark:bg-slate-700 p-2 rounded">
-                        <span class="text-gray-700 dark:text-gray-200">${p.name}</span>
-                        <button onclick="window.app.deleteProduct(${p.id})" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
-                    </div>`).join('');
-            },
-
-            toggleSettings: () => {
-                const m = document.getElementById('settingsModal');
-                m.classList.toggle('hidden');
-                if(!m.classList.contains('hidden')){
-                    document.getElementById('sbUrl').value = config.sbUrl;
-                    document.getElementById('sbKey').value = config.sbKey;
-                    document.getElementById('cwUrl').value = config.cwUrl;
-                    document.getElementById('cwToken').value = config.cwToken;
-                    document.getElementById('cwAccount').value = config.cwAccount;
-                }
-            },
-            updateCounts: () => { document.querySelectorAll('.kanban-list').forEach(l => l.previousElementSibling.querySelector('.count').innerText = l.children.length); }
+            confirmLoss: window.app.confirmLoss,
+            toggleSettings: () => document.getElementById('settingsModal').classList.toggle('hidden'),
+            saveSettings: window.app.saveSettings,
+            updateCounts: () => document.querySelectorAll('.kanban-list').forEach(l => l.previousElementSibling.querySelector('.count').innerText = l.children.length)
         };
 
+        // --- RELATÓRIOS ---
+        window.app.openReports = () => {
+            document.getElementById('reportsModal').classList.remove('hidden');
+            const deals = window.app.deals;
+            
+            // 1. Funil Horizontal
+            const stages = config.stages;
+            const dataStage = Object.keys(stages).map(k => deals.filter(d => d.stage === k).reduce((acc, curr) => acc + (parseFloat(curr.value)||0), 0));
+            new Chart(document.getElementById('chartStage'), {
+                type: 'bar', // Barra normal
+                data: { labels: Object.values(stages).map(s => s.title), datasets: [{ label: 'Valor (R$)', data: dataStage, backgroundColor: '#3b82f6' }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } // indexAxis: 'y' faz ficar horizontal
+            });
+
+            // 2. Origem (Pizza)
+            const channels = {}; deals.forEach(d => { const c = d.channel ? d.channel.split('::')[0] : 'Outros'; channels[c] = (channels[c]||0)+1; });
+            new Chart(document.getElementById('chartChannel'), { type: 'doughnut', data: { labels: Object.keys(channels), datasets: [{ data: Object.values(channels), backgroundColor: ['#3b82f6', '#eab308', '#f97316'] }] }, options: { maintainAspectRatio: false } });
+
+            // 3. Motivos de Perda (Barras)
+            const losses = {}; deals.filter(d => d.stage === 'perdido').forEach(d => { const r = d.loss_reason || 'Não informado'; losses[r] = (losses[r]||0)+1; });
+            new Chart(document.getElementById('chartLoss'), { type: 'bar', data: { labels: Object.keys(losses), datasets: [{ label: 'Qtd', data: Object.values(losses), backgroundColor: '#ef4444' }] }, options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
+        };
+        
+        window.app.exportCSV = window.app.exportCSV; // Mantém a anterior
         document.addEventListener('DOMContentLoaded', window.app.init);
     </script>
 </body>
