@@ -26,7 +26,6 @@
         .dark .ghost-card { background: #1e293b; border-color: #3b82f6; }
         .deal-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
-        /* Badges de Canais */
         .channel-icon.whatsapp { color: #25D366; background: #dcf8c6; }
         .channel-icon.web_widget { color: #3b82f6; background: #dbeafe; }
         .channel-icon.api { color: #8b5cf6; background: #ede9fe; }
@@ -74,7 +73,7 @@
             <div class="flex-1 overflow-y-auto custom-scrollbar pr-2">
                 <div class="flex justify-between items-center mb-6 border-b dark:border-slate-700 pb-4">
                     <h2 class="text-xl font-bold text-gray-800 dark:text-white" id="modalTitle">Novo Negócio</h2>
-                    <button type="button" onclick="window.ui.closeModal()" class="text-gray-400 hover:text-red-500 text-xl transition"><i class="fa-solid fa-xmark"></i></button>
+                    <button onclick="window.ui.closeModal()" class="text-gray-400 hover:text-red-500 text-2xl px-2">&times;</button>
                 </div>
                 
                 <form id="dealForm" onsubmit="window.app.saveDeal(event)">
@@ -108,13 +107,13 @@
 
                     <div class="mt-6 flex justify-between items-center pt-4 border-t dark:border-slate-700">
                         <button type="button" onclick="window.app.deleteDeal()" id="btnDelete" class="text-red-500 hover:text-red-700 text-lg px-2 hidden"><i class="fa-solid fa-trash-can"></i></button>
-                        <div class="flex gap-2 ml-auto items-center">
+                        <div class="flex gap-2 ml-auto">
                              <button type="button" onclick="window.app.requestLoss()" id="btnLoss" class="hidden px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 rounded-lg font-bold text-xs uppercase"><i class="fa-solid fa-thumbs-down"></i> Perdido</button>
                              <button type="button" onclick="window.app.saveDeal(event, 'ganho')" id="btnWin" class="hidden px-3 py-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 rounded-lg font-bold text-xs uppercase"><i class="fa-solid fa-trophy"></i> Ganho</button>
                             
-                            <button type="button" onclick="window.ui.closeModal()" class="px-4 py-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-700 rounded-lg font-bold transition ml-2">Cancelar</button>
+                            <button type="button" onclick="window.ui.closeModal()" class="px-4 py-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-700 rounded-lg font-bold transition">Cancelar</button>
                             
-                            <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold ml-2 shadow-md">Salvar</button>
+                            <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold ml-2">Salvar</button>
                         </div>
                     </div>
                 </form>
@@ -195,9 +194,6 @@
     <div id="settingsModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50">
         <div class="bg-white dark:bg-slate-800 rounded-lg w-96 p-6 shadow-2xl border dark:border-slate-700">
             <h2 class="font-bold text-lg mb-4 text-gray-800 dark:text-white">🔌 Conexões</h2>
-            <div class="bg-yellow-50 dark:bg-yellow-900/30 p-2 rounded mb-4 text-[10px] text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
-                <i class="fa-solid fa-lock"></i> <b>Área Segura:</b> Configurações protegidas.
-            </div>
             <input type="text" id="sbUrl" placeholder="Supabase URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
             <input type="password" id="sbKey" placeholder="Supabase Key" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
             <hr class="my-2 dark:border-slate-600">
@@ -233,10 +229,10 @@
             deals: [], products: [], reasons: [], pendingDrag: null, currentDealId: null,
 
             init: async () => {
+                window.ui.renderBoard(); // Mudei a ordem: desenha o board VAZIO primeiro para não ficar branco
                 if(!config.sbUrl) return window.ui.toggleSettings();
                 try {
                     window.app.supabase = window.supabase.createClient(config.sbUrl, config.sbKey);
-                    window.ui.renderBoard();
                     await Promise.all([window.app.loadProducts(), window.app.loadReasons(), window.app.loadDeals()]);
                 } catch(e) { console.error(e); }
             },
@@ -274,14 +270,10 @@
             },
 
             addNote: async (e) => {
-                e.preventDefault();
-                const input = document.getElementById('newNoteInput');
-                const text = input.value.trim();
-                const dealId = document.getElementById('dealId').value;
+                e.preventDefault(); const input = document.getElementById('newNoteInput'); const text = input.value.trim(); const dealId = document.getElementById('dealId').value;
                 if(!text || !dealId) return;
                 await window.app.supabase.from('timeline').insert([{ deal_id: dealId, action_type: 'nota', description: text }]);
-                input.value = '';
-                window.app.loadTimeline(dealId);
+                input.value = ''; window.app.loadTimeline(dealId);
             },
 
             saveDeal: async (e, stageOverride = null) => {
@@ -291,8 +283,7 @@
                 if(stageOverride) deal.stage = stageOverride;
                 if (!id) { deal.stage = deal.stage || 'prospeccao'; await window.app.supabase.from('deals').insert([deal]); } 
                 else { await window.app.supabase.from('deals').update(deal).eq('id', id); }
-                window.ui.closeModal();
-                window.app.loadDeals();
+                window.ui.closeModal(); window.app.loadDeals();
                 if(stageOverride === 'ganho') window.app.triggerConfetti();
             },
 
@@ -331,117 +322,22 @@
                 localStorage.setItem('crm_cw_token', document.getElementById('cwToken').value.trim());
                 localStorage.setItem('crm_cw_account', document.getElementById('cwAccount').value.trim());
                 location.reload();
-            }
+            },
+            openReports: () => {
+                document.getElementById('reportsModal').classList.remove('hidden');
+                const deals = window.app.deals; const stages = config.stages;
+                const dataStage = Object.keys(stages).map(k => deals.filter(d => d.stage === k).reduce((acc, curr) => acc + (parseFloat(curr.value)||0), 0));
+                new Chart(document.getElementById('chartStage'), { type: 'bar', data: { labels: Object.values(stages).map(s => s.title), datasets: [{ label: 'Valor (R$)', data: dataStage, backgroundColor: '#3b82f6' }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+                const channels = {}; deals.forEach(d => { const c = d.channel ? d.channel.split('::')[0] : 'Outros'; channels[c] = (channels[c]||0)+1; });
+                new Chart(document.getElementById('chartChannel'), { type: 'doughnut', data: { labels: Object.keys(channels), datasets: [{ data: Object.values(channels), backgroundColor: ['#3b82f6', '#eab308', '#f97316'] }] }, options: { maintainAspectRatio: false } });
+                const losses = {}; deals.filter(d => d.stage === 'perdido').forEach(d => { const r = d.loss_reason || 'Não informado'; losses[r] = (losses[r]||0)+1; });
+                new Chart(document.getElementById('chartLoss'), { type: 'bar', data: { labels: Object.keys(losses), datasets: [{ label: 'Qtd', data: Object.values(losses), backgroundColor: '#ef4444' }] }, options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
+            },
+            toggleSettings: () => document.getElementById('settingsModal').classList.toggle('hidden'),
+            updateCounts: () => document.querySelectorAll('.kanban-list').forEach(l => l.previousElementSibling.querySelector('.count').innerText = l.children.length)
         };
 
-        window.ui = {
-            renderBoard: () => {
-                const b = document.getElementById('board'); b.innerHTML = '';
-                Object.entries(config.stages).forEach(([k, v]) => {
-                    const c = document.createElement('div');
-                    c.className = 'flex flex-col w-[320px] min-w-[320px] max-h-full';
-                    c.innerHTML = `<div class="flex justify-between mb-3 px-1"><div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full ${v.color.replace('border','bg')}"></span><h3 class="font-bold text-gray-700 dark:text-gray-300 uppercase text-xs">${v.title}</h3></div><span class="count bg-white dark:bg-slate-700 px-2 rounded-full text-[10px] font-bold border dark:border-slate-600">0</span></div><div class="kanban-list flex-1 bg-gray-100/50 dark:bg-slate-800/50 rounded-xl p-2 space-y-3 overflow-y-auto border border-gray-200/60 dark:border-slate-700/60 custom-scrollbar" id="col-${k}" data-stage="${k}"></div>`;
-                    b.appendChild(c);
-                    new Sortable(c.querySelector('.kanban-list'), { group: 'deals', animation: 150, ghostClass: 'ghost-card', onEnd: (evt) => { if (evt.to.dataset.stage !== evt.from.dataset.stage) window.app.moveDeal(evt.item.dataset.id, evt.to.dataset.stage, evt.from.dataset.stage); } });
-                });
-            },
-            createCard: (d) => {
-                const el = document.createElement('div');
-                el.className = 'deal-card bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 cursor-pointer transition relative group';
-                el.dataset.id = d.id; el.onclick = (e) => { if(!e.target.closest('a')) window.ui.editDeal(d); };
-                const val = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.value);
-                const date = new Date(d.created_at).toLocaleDateString('pt-BR').slice(0,5);
-                let lossBadge = (d.stage === 'perdido' && d.loss_reason) ? `<div class="text-[10px] bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-0.5 rounded border border-red-200 dark:border-red-800 font-bold mb-2 inline-block"><i class="fa-solid fa-thumbs-down"></i> ${d.loss_reason}</div>` : '';
-                let productBadge = d.product ? `<span class="text-[10px] bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded border border-orange-200 dark:border-orange-800 font-semibold mb-2 inline-block ml-1"><i class="fa-solid fa-box"></i> ${d.product}</span>` : '';
-                let datesHtml = '';
-                if(d.meeting_date) datesHtml += `<div class="text-[10px] bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded border border-yellow-100 dark:border-yellow-800 flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${new Date(d.meeting_date).toLocaleDateString().slice(0,5)}</div>`;
-                if(d.closing_date) datesHtml += `<div class="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-1 rounded border border-purple-200 dark:border-purple-800 flex items-center gap-1"><i class="fa-solid fa-flag-checkered"></i> ${new Date(d.closing_date).toLocaleDateString().slice(0,5)}</div>`;
-                let chatLink = d.chatwoot_id ? `<a href="${config.cwUrl}/app/accounts/${config.cwAccount}/conversations/${d.chatwoot_id}" target="_blank" class="text-xs bg-slate-700 text-white px-3 py-1.5 rounded hover:bg-slate-600 flex items-center gap-2 font-medium" onclick="event.stopPropagation()"><i class="fa-regular fa-comments"></i> Chat</a>` : '';
-                el.innerHTML = `<div class="flex justify-between items-start mb-2"><span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase truncate max-w-[150px]">${d.company||'Particular'}</span><span class="text-[10px] text-gray-300 dark:text-gray-600">${date}</span></div>${lossBadge}${productBadge}<h4 class="font-bold text-gray-800 dark:text-gray-200 text-sm mb-1 truncate">${d.title}</h4><p class="font-mono text-xs text-gray-600 dark:text-gray-400 font-medium mb-3">${val}</p><div class="flex flex-wrap gap-2 mb-3">${datesHtml}</div><div class="pt-2 mt-2 border-t dark:border-slate-700">${chatLink}</div>`;
-                return el;
-            },
-            editDeal: (d) => {
-                document.getElementById('dealId').value = d.id;
-                document.getElementById('dealTitle').value = d.title;
-                document.getElementById('dealCompany').value = d.company || '';
-                document.getElementById('dealProduct').value = d.product || '';
-                document.getElementById('dealEmail').value = d.email || '';
-                document.getElementById('dealPhone').value = d.phone || '';
-                document.getElementById('dealValue').value = d.value;
-                document.getElementById('dealChatId').value = d.chatwoot_id || '';
-                document.getElementById('dealChannel').value = d.channel || '';
-                document.getElementById('dealMeeting').value = d.meeting_date ? new Date(d.meeting_date).toISOString().slice(0,16) : '';
-                document.getElementById('dealClosing').value = d.closing_date || '';
-                document.getElementById('modalTitle').innerText = 'Editar Negócio';
-                document.getElementById('btnDelete').classList.remove('hidden');
-                document.getElementById('btnLoss').classList.remove('hidden');
-                document.getElementById('btnWin').classList.remove('hidden');
-                window.app.loadTimeline(d.id);
-                document.getElementById('dealModal').classList.remove('hidden');
-            },
-            openModal: () => { 
-                document.getElementById('dealForm').reset();
-                document.getElementById('dealId').value = '';
-                document.getElementById('timelineList').innerHTML = '<div class="text-center text-gray-400 mt-10">Salve o negócio para adicionar notas.</div>';
-                document.getElementById('dealModal').classList.remove('hidden');
-                document.getElementById('modalTitle').innerText = 'Novo Negócio';
-                document.getElementById('btnDelete').classList.add('hidden');
-                document.getElementById('btnLoss').classList.add('hidden');
-                document.getElementById('btnWin').classList.add('hidden');
-            },
-            closeModal: () => document.getElementById('dealModal').classList.add('hidden'),
-            
-            openProductsModal: window.ui.openProductsModal, renderProductsList: window.ui.renderProductsList, renderProductSelect: window.ui.renderProductSelect,
-            openReasonsModal: window.ui.openReasonsModal, renderReasonsList: window.ui.renderReasonsList, renderReasonSelect: window.ui.renderReasonSelect,
-            cancelLoss: window.ui.cancelLoss, confirmLoss: window.ui.confirmLoss,
-            
-            // --- NOVO: TRAVA DE SEGURANÇA NA ENGRENAGEM ---
-            toggleSettings: async () => {
-                const modal = document.getElementById('settingsModal');
-                
-                if (!modal.classList.contains('hidden')) {
-                    modal.classList.add('hidden');
-                    return;
-                }
-
-                const { value: pass } = await Swal.fire({
-                    title: 'Acesso Restrito',
-                    input: 'password',
-                    inputLabel: 'Senha de Administrador',
-                    inputPlaceholder: 'Digite a senha...',
-                    showCancelButton: true,
-                    confirmButtonText: 'Entrar',
-                    confirmButtonColor: '#3b82f6'
-                });
-
-                if (pass === 'Be@More@2026@kanban') {
-                    modal.classList.remove('hidden');
-                    document.getElementById('sbUrl').value = config.sbUrl;
-                    document.getElementById('sbKey').value = config.sbKey;
-                    document.getElementById('cwUrl').value = config.cwUrl;
-                    document.getElementById('cwToken').value = config.cwToken;
-                    document.getElementById('cwAccount').value = config.cwAccount;
-                } else if (pass) {
-                    Swal.fire('Erro', 'Senha incorreta!', 'error');
-                }
-            },
-            
-            saveSettings: window.app.saveSettings,
-            updateCounts: window.ui.updateCounts
-        };
-
-        window.app.openReports = () => {
-            document.getElementById('reportsModal').classList.remove('hidden');
-            const deals = window.app.deals;
-            const stages = config.stages;
-            const dataStage = Object.keys(stages).map(k => deals.filter(d => d.stage === k).reduce((acc, curr) => acc + (parseFloat(curr.value)||0), 0));
-            new Chart(document.getElementById('chartStage'), { type: 'bar', data: { labels: Object.values(stages).map(s => s.title), datasets: [{ label: 'Valor (R$)', data: dataStage, backgroundColor: '#3b82f6' }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-            const channels = {}; deals.forEach(d => { const c = d.channel ? d.channel.split('::')[0] : 'Outros'; channels[c] = (channels[c]||0)+1; });
-            new Chart(document.getElementById('chartChannel'), { type: 'doughnut', data: { labels: Object.keys(channels), datasets: [{ data: Object.values(channels), backgroundColor: ['#3b82f6', '#eab308', '#f97316'] }] }, options: { maintainAspectRatio: false } });
-            const losses = {}; deals.filter(d => d.stage === 'perdido').forEach(d => { const r = d.loss_reason || 'Não informado'; losses[r] = (losses[r]||0)+1; });
-            new Chart(document.getElementById('chartLoss'), { type: 'bar', data: { labels: Object.keys(losses), datasets: [{ label: 'Qtd', data: Object.values(losses), backgroundColor: '#ef4444' }] }, options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
-        };
-        
+        window.ui = window.ui; 
         window.app.exportCSV = window.app.exportCSV; 
         document.addEventListener('DOMContentLoaded', window.app.init);
     </script>
