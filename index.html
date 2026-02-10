@@ -10,7 +10,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script> tailwind.config = { darkMode: 'class' } </script>
@@ -24,7 +26,7 @@
         .dark .ghost-card { background: #1e293b; border-color: #3b82f6; }
         .deal-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
-        /* Badges */
+        /* Badges de Canais */
         .channel-icon.whatsapp { color: #25D366; background: #dcf8c6; }
         .channel-icon.web_widget { color: #3b82f6; background: #dbeafe; }
         .channel-icon.api { color: #8b5cf6; background: #ede9fe; }
@@ -66,14 +68,83 @@
 
     <div id="board" class="flex-1 overflow-x-auto overflow-y-hidden flex p-6 gap-6 items-start bg-slate-50 dark:bg-slate-900 transition-colors"></div>
 
+    <div id="dealModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto py-10">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[800px] p-6 relative border dark:border-slate-700 flex flex-col md:flex-row gap-6 max-h-[90vh]">
+            
+            <div class="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                <div class="flex justify-between items-center mb-6 border-b dark:border-slate-700 pb-4">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white" id="modalTitle">Novo Negócio</h2>
+                </div>
+                
+                <form id="dealForm" onsubmit="window.app.saveDeal(event)">
+                    <input type="hidden" id="dealId">
+                    <input type="hidden" id="conversationStart">
+                    
+                    <div class="bg-blue-50 dark:bg-slate-700 p-3 rounded-lg mb-4 border border-blue-100 dark:border-slate-600">
+                        <div class="flex gap-2">
+                            <input type="text" id="dealPhone" class="flex-1 border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2 outline-none" placeholder="Telefone ou ID da Conversa">
+                            <button type="button" onclick="window.app.fetchChatwootData()" class="px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="text-[10px] uppercase font-bold text-gray-400">Título/Cliente</label><input type="text" id="dealTitle" required class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2"></div>
+                            <div><label class="text-[10px] uppercase font-bold text-gray-400">Empresa</label><input type="text" id="dealCompany" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2"></div>
+                        </div>
+                        <div><label class="text-[10px] uppercase font-bold text-gray-400">Produto</label><select id="dealProduct" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2"><option value="">Produto...</option></select></div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="text-[10px] uppercase font-bold text-gray-400">Email</label><input type="email" id="dealEmail" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2"></div>
+                            <div><label class="text-[10px] uppercase font-bold text-gray-400">Canal</label><input type="text" id="dealChannel" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2"></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div><label class="text-[10px] uppercase font-bold text-gray-400">Valor (R$)</label><input type="number" id="dealValue" step="0.01" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2"></div>
+                            <div><label class="text-[10px] uppercase font-bold text-gray-400">Chat ID</label><input type="text" id="dealChatId" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-300 rounded-lg p-2 bg-gray-50" readonly></div>
+                            <div><label class="text-[10px] uppercase font-bold text-gray-400">Prev. Fechamento</label><input type="date" id="dealClosing" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2"></div>
+                        </div>
+                        <div><label class="text-[10px] uppercase font-bold text-gray-400">Data Reunião</label><input type="datetime-local" id="dealMeeting" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2"></div>
+                    </div>
+
+                    <div class="mt-6 flex justify-between items-center pt-4 border-t dark:border-slate-700">
+                        <button type="button" onclick="window.app.deleteDeal()" id="btnDelete" class="text-red-500 hover:text-red-700 text-lg px-2 hidden"><i class="fa-solid fa-trash-can"></i></button>
+                        <div class="flex gap-2 ml-auto">
+                             <button type="button" onclick="window.app.requestLoss()" id="btnLoss" class="hidden px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 rounded-lg font-bold text-xs uppercase"><i class="fa-solid fa-thumbs-down"></i> Perdido</button>
+                             <button type="button" onclick="window.app.saveDeal(event, 'ganho')" id="btnWin" class="hidden px-3 py-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 rounded-lg font-bold text-xs uppercase"><i class="fa-solid fa-trophy"></i> Ganho</button>
+                            <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold ml-2">Salvar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="w-full md:w-[320px] bg-gray-50 dark:bg-slate-900/50 rounded-lg border dark:border-slate-700 flex flex-col h-[500px]">
+                <div class="p-3 border-b dark:border-slate-700 bg-gray-100 dark:bg-slate-700/50 rounded-t-lg">
+                    <h3 class="font-bold text-gray-700 dark:text-gray-200 text-xs uppercase"><i class="fa-solid fa-clock-rotate-left"></i> Linha do Tempo</h3>
+                </div>
+                
+                <div id="timelineList" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-xs">
+                    <div class="text-center text-gray-400 mt-10">Selecione um negócio para ver o histórico.</div>
+                </div>
+
+                <div class="p-3 border-t dark:border-slate-700 bg-white dark:bg-slate-800 rounded-b-lg">
+                    <form onsubmit="window.app.addNote(event)" class="relative">
+                        <input type="text" id="newNoteInput" placeholder="Adicionar nota..." class="w-full bg-gray-50 dark:bg-slate-900 border dark:border-slate-600 rounded-full py-2 pl-3 pr-10 outline-none focus:ring-1 focus:ring-blue-500 dark:text-white" autocomplete="off">
+                        <button type="submit" class="absolute right-1 top-1 w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700"><i class="fa-solid fa-paper-plane text-[10px]"></i></button>
+                    </form>
+                </div>
+            </div>
+
+            <button onclick="window.ui.closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-2xl md:hidden">&times;</button>
+        </div>
+    </div>
+
     <div id="reasonsModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[400px] p-6 border dark:border-slate-700">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-gray-800 dark:text-white"><i class="fa-solid fa-thumbs-down text-red-500"></i> Motivos de Perda</h2>
-                <button onclick="document.getElementById('reasonsModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500">&times;</button>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white">Motivos de Perda</h2>
+                <button onclick="document.getElementById('reasonsModal').classList.add('hidden')" class="text-gray-400">&times;</button>
             </div>
             <form onsubmit="window.app.saveReason(event)" class="flex gap-2 mb-4">
-                <input type="text" id="newReasonName" placeholder="Ex: Preço Alto..." class="flex-1 border dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded p-2 outline-none focus:border-red-500" required>
+                <input type="text" id="newReasonName" placeholder="Ex: Preço Alto..." class="flex-1 border dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded p-2 outline-none" required>
                 <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 rounded font-bold">+</button>
             </form>
             <div id="reasonsList" class="max-h-60 overflow-y-auto space-y-2 custom-scrollbar"></div>
@@ -82,11 +153,8 @@
 
     <div id="selectReasonModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-[60] backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[350px] p-6 border dark:border-slate-700 text-center">
-            <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">Por que perdemos? 😢</h2>
-            <p class="text-xs text-gray-500 mb-4">Selecione o motivo para nossos relatórios.</p>
-            <select id="lossReasonSelect" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg p-3 mb-4 outline-none">
-                <option value="">Selecione um motivo...</option>
-            </select>
+            <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-2">Motivo da Perda</h2>
+            <select id="lossReasonSelect" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg p-3 mb-4 outline-none"><option value="">Selecione...</option></select>
             <div class="flex gap-2 justify-center">
                 <button onclick="window.ui.cancelLoss()" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded">Cancelar</button>
                 <button onclick="window.ui.confirmLoss()" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-bold">Confirmar</button>
@@ -97,11 +165,11 @@
     <div id="productsModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[400px] p-6 border dark:border-slate-700">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-gray-800 dark:text-white"><i class="fa-solid fa-box text-orange-500"></i> Produtos</h2>
-                <button onclick="document.getElementById('productsModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500">&times;</button>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white">Produtos</h2>
+                <button onclick="document.getElementById('productsModal').classList.add('hidden')" class="text-gray-400">&times;</button>
             </div>
             <form onsubmit="window.app.saveProduct(event)" class="flex gap-2 mb-4">
-                <input type="text" id="newProductName" placeholder="Nome do Produto..." class="flex-1 border dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded p-2 outline-none focus:border-blue-500" required>
+                <input type="text" id="newProductName" placeholder="Nome do Produto..." class="flex-1 border dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded p-2 outline-none" required>
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded font-bold">+</button>
             </form>
             <div id="productsList" class="max-h-60 overflow-y-auto space-y-2 custom-scrollbar"></div>
@@ -115,69 +183,10 @@
                 <button onclick="document.getElementById('reportsModal').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border dark:border-slate-700">
-                    <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Funil de Vendas</h3>
-                    <div class="h-64"><canvas id="chartStage"></canvas></div>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border dark:border-slate-700">
-                    <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Origem dos Leads</h3>
-                    <div class="h-64 flex justify-center"><canvas id="chartChannel"></canvas></div>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border dark:border-slate-700 col-span-1 md:col-span-2">
-                    <h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Motivos de Perda</h3>
-                    <div class="h-52"><canvas id="chartLoss"></canvas></div>
-                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border dark:border-slate-700"><h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Funil</h3><div class="h-64"><canvas id="chartStage"></canvas></div></div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border dark:border-slate-700"><h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Origem</h3><div class="h-64 flex justify-center"><canvas id="chartChannel"></canvas></div></div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border dark:border-slate-700 col-span-1 md:col-span-2"><h3 class="text-lg font-bold mb-4 text-gray-700 dark:text-gray-200">Motivos de Perda</h3><div class="h-52"><canvas id="chartLoss"></canvas></div></div>
             </div>
-        </div>
-    </div>
-
-    <div id="dealModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto py-10">
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[600px] p-6 relative border dark:border-slate-700">
-            <div class="flex justify-between items-center mb-6 border-b dark:border-slate-700 pb-4">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white" id="modalTitle">Novo Negócio</h2>
-                <button onclick="window.ui.closeModal()" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
-            </div>
-            
-            <form id="dealForm" onsubmit="window.app.saveDeal(event)">
-                <input type="hidden" id="dealId">
-                <input type="hidden" id="conversationStart">
-                
-                <div class="bg-blue-50 dark:bg-slate-700 p-4 rounded-lg mb-6 border border-blue-100 dark:border-slate-600">
-                    <div class="flex gap-2">
-                        <input type="text" id="dealPhone" class="flex-1 border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5 outline-none" placeholder="Telefone ou ID da Conversa">
-                        <button type="button" onclick="window.app.fetchChatwootData()" class="px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"><i class="fa-solid fa-magnifying-glass"></i></button>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <input type="text" id="dealTitle" required class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5" placeholder="Nome">
-                        <input type="text" id="dealCompany" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5" placeholder="Empresa">
-                    </div>
-                    <select id="dealProduct" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5"><option value="">Produto...</option></select>
-                    <div class="grid grid-cols-2 gap-4">
-                        <input type="email" id="dealEmail" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5" placeholder="Email">
-                        <input type="text" id="dealChannel" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5" placeholder="Canal">
-                    </div>
-                    <div class="grid grid-cols-3 gap-4">
-                        <input type="number" id="dealValue" step="0.01" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5" placeholder="Valor">
-                        <input type="text" id="dealChatId" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-300 rounded-lg p-2.5 bg-gray-50" readonly placeholder="Chat ID">
-                        <input type="date" id="dealClosing" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5">
-                    </div>
-                    <input type="datetime-local" id="dealMeeting" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5">
-                    <textarea id="dealNotes" rows="3" class="w-full border dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg p-2.5" placeholder="Notas..."></textarea>
-                </div>
-
-                <div class="mt-8 flex justify-between items-center pt-4 border-t dark:border-slate-700">
-                    <button type="button" onclick="window.app.deleteDeal()" id="btnDelete" class="text-red-500 hover:text-red-700 text-lg px-2"><i class="fa-solid fa-trash-can"></i></button>
-                    
-                    <div class="flex gap-2 ml-auto">
-                        <button type="button" onclick="window.app.requestLoss()" class="px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 rounded-lg font-bold text-xs uppercase"><i class="fa-solid fa-thumbs-down"></i> Perdido</button>
-                        <button type="button" onclick="window.app.saveDeal(event, 'ganho')" class="px-3 py-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 rounded-lg font-bold text-xs uppercase"><i class="fa-solid fa-trophy"></i> Ganho</button>
-                        <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold ml-2">Salvar</button>
-                    </div>
-                </div>
-            </form>
         </div>
     </div>
 
@@ -195,7 +204,6 @@
     </div>
 
     <script>
-        // CONFIG E INICIO
         const config = {
             stages: {
                 'prospeccao': { title: '🔎 Prospecção', color: 'border-blue-500' },
@@ -217,10 +225,7 @@
 
         window.app = {
             supabase: null,
-            deals: [],
-            products: [],
-            reasons: [],
-            pendingDrag: null, // Para guardar o estado do drag
+            deals: [], products: [], reasons: [], pendingDrag: null, currentDealId: null,
 
             init: async () => {
                 if(!config.sbUrl) return window.ui.toggleSettings();
@@ -241,16 +246,52 @@
                 document.getElementById('total-pipeline').innerText = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
                 window.ui.updateCounts();
             },
+            loadProducts: async () => { const {data} = await window.app.supabase.from('products').select('*').order('name'); window.app.products = data || []; window.ui.renderProductSelect(); },
+            loadReasons: async () => { const {data} = await window.app.supabase.from('loss_reasons').select('*').order('name'); window.app.reasons = data || []; },
 
-            loadProducts: async () => {
-                const { data } = await window.app.supabase.from('products').select('*').order('name');
-                window.app.products = data || [];
-                window.ui.renderProductSelect();
+            // TIMELINE: Carregar e Mostrar
+            loadTimeline: async (dealId) => {
+                const list = document.getElementById('timelineList');
+                list.innerHTML = '<div class="text-center text-gray-400"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+                
+                const { data } = await window.app.supabase.from('timeline').select('*').eq('deal_id', dealId).order('created_at', {ascending: true});
+                
+                if(!data || data.length === 0) {
+                    list.innerHTML = '<div class="text-center text-gray-400 mt-10">Nenhum histórico.</div>';
+                    return;
+                }
+
+                list.innerHTML = data.map(t => {
+                    const date = new Date(t.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' });
+                    let icon = 'fa-comment', color = 'bg-blue-100 text-blue-600';
+                    
+                    if(t.action_type === 'criacao') { icon = 'fa-plus'; color = 'bg-green-100 text-green-600'; }
+                    if(t.action_type === 'mudanca_etapa') { icon = 'fa-arrow-right'; color = 'bg-purple-100 text-purple-600'; }
+                    if(t.action_type === 'perda') { icon = 'fa-thumbs-down'; color = 'bg-red-100 text-red-600'; }
+
+                    return `
+                        <div class="flex gap-3 animate-fade-in">
+                            <div class="mt-1 flex-shrink-0 w-6 h-6 rounded-full ${color} flex items-center justify-center text-[10px]"><i class="fa-solid ${icon}"></i></div>
+                            <div class="flex-1 bg-white dark:bg-slate-700/50 p-2 rounded-lg border dark:border-slate-600">
+                                <p class="text-gray-800 dark:text-gray-200">${t.description}</p>
+                                <span class="text-[10px] text-gray-400 block mt-1 text-right">${date}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                list.scrollTop = list.scrollHeight;
             },
-            
-            loadReasons: async () => {
-                const { data } = await window.app.supabase.from('loss_reasons').select('*').order('name');
-                window.app.reasons = data || [];
+
+            addNote: async (e) => {
+                e.preventDefault();
+                const input = document.getElementById('newNoteInput');
+                const text = input.value.trim();
+                const dealId = document.getElementById('dealId').value;
+                if(!text || !dealId) return;
+
+                await window.app.supabase.from('timeline').insert([{ deal_id: dealId, action_type: 'nota', description: text }]);
+                input.value = '';
+                window.app.loadTimeline(dealId);
             },
 
             saveDeal: async (e, stageOverride = null) => {
@@ -267,113 +308,72 @@
                     channel: document.getElementById('dealChannel').value,
                     meeting_date: document.getElementById('dealMeeting').value || null,
                     closing_date: document.getElementById('dealClosing').value || null,
-                    conversation_start: document.getElementById('conversationStart').value || null,
-                    notes: document.getElementById('dealNotes').value,
                 };
                 if(stageOverride) deal.stage = stageOverride;
 
-                // Se o ID não existe, insere. Se existe, atualiza.
-                let error;
+                let dealId = id;
                 if (!id) {
                     deal.stage = deal.stage || 'prospeccao';
-                    const { error: err } = await window.app.supabase.from('deals').insert([deal]);
-                    error = err;
-                    if(!err && (deal.phone || deal.email)) window.app.createChatwootContact(deal);
+                    const { data, error } = await window.app.supabase.from('deals').insert([deal]).select();
+                    if(error) return alert(error.message);
+                    dealId = data[0].id;
+                    // Log criação
+                    await window.app.supabase.from('timeline').insert([{ deal_id: dealId, action_type: 'criacao', description: 'Negócio criado.' }]);
                 } else {
-                    const { error: err } = await window.app.supabase.from('deals').update(deal).eq('id', id);
-                    error = err;
+                    await window.app.supabase.from('deals').update(deal).eq('id', id);
+                    // Log edição simples (opcional, pode poluir)
                 }
 
-                if(error) alert('Erro: ' + error.message);
-                else {
-                    window.ui.closeModal();
-                    window.app.loadDeals();
-                    if(stageOverride === 'ganho') window.app.triggerConfetti();
-                }
+                window.ui.closeModal();
+                window.app.loadDeals();
+                if(stageOverride === 'ganho') window.app.triggerConfetti();
             },
 
             deleteDeal: async () => {
                 const id = document.getElementById('dealId').value;
                 if(!id) return;
-                const result = await Swal.fire({
-                    title: 'Excluir negócio?',
-                    text: "Essa ação não pode ser desfeita!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    confirmButtonText: 'Sim, excluir'
-                });
-
+                const result = await Swal.fire({ title: 'Excluir?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
                 if (result.isConfirmed) {
                     await window.app.supabase.from('deals').delete().eq('id', id);
                     window.ui.closeModal();
                     window.app.loadDeals();
-                    Swal.fire('Excluído!', 'O negócio foi removido.', 'success');
                 }
             },
 
-            // --- FLUXO DE PERDA ---
-            requestLoss: () => {
-                window.ui.renderReasonSelect();
-                document.getElementById('selectReasonModal').classList.remove('hidden');
-            },
-
-            confirmLoss: async (reason) => {
-                const r = document.getElementById('lossReasonSelect').value;
-                if(!r) return alert("Selecione um motivo!");
-                
-                // Se veio de um Drag (arrastar)
-                if(window.app.pendingDrag) {
-                    await window.app.supabase.from('deals').update({ stage: 'perdido', loss_reason: r }).eq('id', window.app.pendingDrag);
-                    window.app.pendingDrag = null;
-                } else {
-                    // Veio do Modal (Botão)
-                    const id = document.getElementById('dealId').value;
-                    await window.app.supabase.from('deals').update({ stage: 'perdido', loss_reason: r }).eq('id', id);
-                    window.ui.closeModal();
-                }
-                
-                document.getElementById('selectReasonModal').classList.add('hidden');
-                window.app.loadDeals();
-            },
-
-            // --- Lógica de Arrastar ---
-            moveDeal: async (id, newStage, oldStage, itemEl) => {
+            // FLUXO DE PERDA E MUDANÇA
+            moveDeal: async (id, newStage, oldStage) => {
                 if(newStage === 'perdido') {
                     window.app.pendingDrag = id;
                     window.ui.renderReasonSelect();
                     document.getElementById('selectReasonModal').classList.remove('hidden');
-                    // Se cancelar, o sortable não volta sozinho facilmente sem reload, então o reload do loadDeals resolve
                 } else {
                     await window.app.supabase.from('deals').update({ stage: newStage }).eq('id', id);
+                    await window.app.supabase.from('timeline').insert([{ deal_id: id, action_type: 'mudanca_etapa', description: `Moveu de ${config.stages[oldStage].title} para ${config.stages[newStage].title}` }]);
                     if(newStage === 'ganho') window.app.triggerConfetti();
-                    window.app.loadDeals(); // Recarrega para garantir ordem
+                    window.app.loadDeals();
                 }
             },
 
-            // --- GERENCIAR ITENS AUXILIARES ---
-            saveProduct: async (e) => {
-                e.preventDefault();
-                const name = document.getElementById('newProductName').value;
-                await window.app.supabase.from('products').insert([{ name }]);
-                document.getElementById('newProductName').value = '';
-                window.app.loadProducts(); window.ui.renderProductsList();
-            },
-            saveReason: async (e) => {
-                e.preventDefault();
-                const name = document.getElementById('newReasonName').value;
-                await window.app.supabase.from('loss_reasons').insert([{ name }]);
-                document.getElementById('newReasonName').value = '';
-                window.app.loadReasons(); window.ui.renderReasonsList();
-            },
-            deleteAux: async (table, id, callback) => {
-                if(!confirm('Excluir?')) return;
-                await window.app.supabase.from(table).delete().eq('id', id);
-                callback();
+            confirmLoss: async () => {
+                const r = document.getElementById('lossReasonSelect').value;
+                if(!r) return alert("Selecione um motivo!");
+                let id = window.app.pendingDrag || document.getElementById('dealId').value;
+                
+                await window.app.supabase.from('deals').update({ stage: 'perdido', loss_reason: r }).eq('id', id);
+                await window.app.supabase.from('timeline').insert([{ deal_id: id, action_type: 'perda', description: `Marcado como Perdido. Motivo: ${r}` }]);
+                
+                window.app.pendingDrag = null;
+                document.getElementById('selectReasonModal').classList.add('hidden');
+                window.ui.closeModal();
+                window.app.loadDeals();
             },
 
-            // --- UTILITARIOS ---
-            fetchChatwootData: async () => { /* Mesma lógica anterior */ 
+            // UTILITARIOS
+            requestLoss: () => { window.ui.renderReasonSelect(); document.getElementById('selectReasonModal').classList.remove('hidden'); },
+            saveProduct: async (e) => { e.preventDefault(); await window.app.supabase.from('products').insert([{ name: document.getElementById('newProductName').value }]); document.getElementById('newProductName').value=''; window.app.loadProducts(); window.ui.renderProductsList(); },
+            saveReason: async (e) => { e.preventDefault(); await window.app.supabase.from('loss_reasons').insert([{ name: document.getElementById('newReasonName').value }]); document.getElementById('newReasonName').value=''; window.app.loadReasons(); window.ui.renderReasonsList(); },
+            deleteAux: async (table, id, callback) => { if(confirm('Excluir?')) { await window.app.supabase.from(table).delete().eq('id', id); callback(); } },
+            fetchChatwootData: async () => { /* Logica de busca igual a anterior */ 
                 const query = document.getElementById('dealPhone').value.trim();
                 if(!query) return;
                 try {
@@ -396,7 +396,6 @@
                     } else alert("Não encontrado");
                 } catch(e) { console.error(e); }
             },
-            createChatwootContact: async (deal) => { /* Mesma lógica */ },
             triggerConfetti: () => { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
         };
 
@@ -408,18 +407,47 @@
                     c.className = 'flex flex-col w-[320px] min-w-[320px] max-h-full';
                     c.innerHTML = `<div class="flex justify-between mb-3 px-1"><div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full ${v.color.replace('border','bg')}"></span><h3 class="font-bold text-gray-700 dark:text-gray-300 uppercase text-xs">${v.title}</h3></div><span class="count bg-white dark:bg-slate-700 px-2 rounded-full text-[10px] font-bold border dark:border-slate-600">0</span></div><div class="kanban-list flex-1 bg-gray-100/50 dark:bg-slate-800/50 rounded-xl p-2 space-y-3 overflow-y-auto border border-gray-200/60 dark:border-slate-700/60 custom-scrollbar" id="col-${k}" data-stage="${k}"></div>`;
                     b.appendChild(c);
-                    new Sortable(c.querySelector('.kanban-list'), { group: 'deals', animation: 150, ghostClass: 'ghost-card', onEnd: (evt) => { if (evt.to.dataset.stage !== evt.from.dataset.stage) window.app.moveDeal(evt.item.dataset.id, evt.to.dataset.stage, evt.from.dataset.stage, evt.item); } });
+                    new Sortable(c.querySelector('.kanban-list'), { group: 'deals', animation: 150, ghostClass: 'ghost-card', onEnd: (evt) => { if (evt.to.dataset.stage !== evt.from.dataset.stage) window.app.moveDeal(evt.item.dataset.id, evt.to.dataset.stage, evt.from.dataset.stage); } });
                 });
             },
+            
+            // --- VISUAL DO CARD RESTAURADO ---
             createCard: (d) => {
                 const el = document.createElement('div');
                 el.className = 'deal-card bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 cursor-pointer transition relative group';
                 el.dataset.id = d.id; el.onclick = (e) => { if(!e.target.closest('a')) window.ui.editDeal(d); };
                 const val = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.value);
-                el.innerHTML = `<div class="flex justify-between mb-2"><span class="text-[10px] font-bold text-gray-400 uppercase">${d.company||'Particular'}</span><span class="text-[10px] text-gray-400">${new Date(d.created_at).toLocaleDateString()}</span></div>${d.product ? `<span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded border border-orange-200 mb-2 inline-block">${d.product}</span>` : ''}<h4 class="font-bold text-gray-800 dark:text-gray-200 text-sm mb-1 truncate">${d.title}</h4><p class="font-mono text-xs text-gray-600 dark:text-gray-400 font-medium">${val}</p>`;
-                if(d.chatwoot_id) el.innerHTML += `<div class="border-t dark:border-slate-700 pt-2 mt-2"><a href="${config.cwUrl}/app/accounts/${config.cwAccount}/conversations/${d.chatwoot_id}" target="_blank" class="text-xs text-blue-500 hover:underline" onclick="event.stopPropagation()">Abrir Chat</a></div>`;
+                const date = new Date(d.created_at).toLocaleDateString('pt-BR').slice(0,5);
+                
+                // Badge de Perda
+                let lossBadge = (d.stage === 'perdido' && d.loss_reason) ? `<div class="text-[10px] bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-0.5 rounded border border-red-200 dark:border-red-800 font-bold mb-2 inline-block"><i class="fa-solid fa-thumbs-down"></i> ${d.loss_reason}</div>` : '';
+                
+                // Produto
+                let productBadge = d.product ? `<span class="text-[10px] bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded border border-orange-200 dark:border-orange-800 font-semibold mb-2 inline-block ml-1"><i class="fa-solid fa-box"></i> ${d.product}</span>` : '';
+
+                // Datas Importantes
+                let datesHtml = '';
+                if(d.meeting_date) datesHtml += `<div class="text-[10px] bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded border border-yellow-100 dark:border-yellow-800 flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${new Date(d.meeting_date).toLocaleDateString().slice(0,5)}</div>`;
+                if(d.closing_date) datesHtml += `<div class="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-1 rounded border border-purple-200 dark:border-purple-800 flex items-center gap-1"><i class="fa-solid fa-flag-checkered"></i> ${new Date(d.closing_date).toLocaleDateString().slice(0,5)}</div>`;
+
+                // Botão Chat
+                let chatLink = d.chatwoot_id ? `<a href="${config.cwUrl}/app/accounts/${config.cwAccount}/conversations/${d.chatwoot_id}" target="_blank" class="text-xs bg-slate-700 text-white px-3 py-1.5 rounded hover:bg-slate-600 flex items-center gap-2 font-medium" onclick="event.stopPropagation()"><i class="fa-regular fa-comments"></i> Chat</a>` : '';
+
+                el.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase truncate max-w-[150px]">${d.company||'Particular'}</span>
+                        <span class="text-[10px] text-gray-300 dark:text-gray-600">${date}</span>
+                    </div>
+                    ${lossBadge}
+                    ${productBadge}
+                    <h4 class="font-bold text-gray-800 dark:text-gray-200 text-sm mb-1 truncate">${d.title}</h4>
+                    <p class="font-mono text-xs text-gray-600 dark:text-gray-400 font-medium mb-3">${val}</p>
+                    <div class="flex flex-wrap gap-2 mb-3">${datesHtml}</div>
+                    <div class="pt-2 mt-2 border-t dark:border-slate-700">${chatLink}</div>
+                `;
                 return el;
             },
+
             editDeal: (d) => {
                 document.getElementById('dealId').value = d.id;
                 document.getElementById('dealTitle').value = d.title;
@@ -432,59 +460,55 @@
                 document.getElementById('dealChannel').value = d.channel || '';
                 document.getElementById('dealMeeting').value = d.meeting_date ? new Date(d.meeting_date).toISOString().slice(0,16) : '';
                 document.getElementById('dealClosing').value = d.closing_date || '';
-                document.getElementById('conversationStart').value = d.conversation_start || '';
-                document.getElementById('dealNotes').value = d.notes || '';
+                
                 document.getElementById('modalTitle').innerText = 'Editar Negócio';
                 document.getElementById('btnDelete').classList.remove('hidden');
+                document.getElementById('btnLoss').classList.remove('hidden');
+                document.getElementById('btnWin').classList.remove('hidden');
+                
+                window.app.loadTimeline(d.id); // Carrega a timeline
                 document.getElementById('dealModal').classList.remove('hidden');
             },
-            openModal: () => { document.getElementById('dealForm').reset(); document.getElementById('dealId').value = ''; document.getElementById('dealModal').classList.remove('hidden'); document.getElementById('modalTitle').innerText = 'Novo Negócio'; document.getElementById('btnDelete').classList.add('hidden'); },
+            openModal: () => { 
+                document.getElementById('dealForm').reset(); 
+                document.getElementById('dealId').value = ''; 
+                document.getElementById('timelineList').innerHTML = '<div class="text-center text-gray-400 mt-10">Salve o negócio para adicionar notas.</div>';
+                document.getElementById('dealModal').classList.remove('hidden'); 
+                document.getElementById('modalTitle').innerText = 'Novo Negócio'; 
+                document.getElementById('btnDelete').classList.add('hidden');
+                document.getElementById('btnLoss').classList.add('hidden');
+                document.getElementById('btnWin').classList.add('hidden');
+            },
             closeModal: () => document.getElementById('dealModal').classList.add('hidden'),
             
-            // --- AUXILIARES UI ---
+            // Auxiliares (Products/Reasons/Settings) - Mantidos iguais
             openProductsModal: () => { document.getElementById('productsModal').classList.remove('hidden'); window.ui.renderProductsList(); },
             renderProductsList: () => document.getElementById('productsList').innerHTML = window.app.products.map(p => `<div class="flex justify-between bg-gray-50 dark:bg-slate-700 p-2 rounded"><span class="dark:text-white">${p.name}</span><button onclick="window.app.deleteAux('products', ${p.id}, window.app.loadProducts)" class="text-red-400"><i class="fa-solid fa-trash"></i></button></div>`).join(''),
             renderProductSelect: () => document.getElementById('dealProduct').innerHTML = '<option value="">Selecione...</option>' + window.app.products.map(p => `<option value="${p.name}">${p.name}</option>`).join(''),
-            
             openReasonsModal: () => { document.getElementById('reasonsModal').classList.remove('hidden'); window.ui.renderReasonsList(); },
             renderReasonsList: () => document.getElementById('reasonsList').innerHTML = window.app.reasons.map(p => `<div class="flex justify-between bg-gray-50 dark:bg-slate-700 p-2 rounded"><span class="dark:text-white">${p.name}</span><button onclick="window.app.deleteAux('loss_reasons', ${p.id}, window.app.loadReasons)" class="text-red-400"><i class="fa-solid fa-trash"></i></button></div>`).join(''),
             renderReasonSelect: () => document.getElementById('lossReasonSelect').innerHTML = '<option value="">Selecione...</option>' + window.app.reasons.map(p => `<option value="${p.name}">${p.name}</option>`).join(''),
-            
-            cancelLoss: () => { 
-                window.app.pendingDrag = null; 
-                document.getElementById('selectReasonModal').classList.add('hidden');
-                window.app.loadDeals(); // Reseta posições
-            },
+            cancelLoss: () => { window.app.pendingDrag = null; document.getElementById('selectReasonModal').classList.add('hidden'); window.app.loadDeals(); },
             confirmLoss: window.app.confirmLoss,
             toggleSettings: () => document.getElementById('settingsModal').classList.toggle('hidden'),
             saveSettings: window.app.saveSettings,
             updateCounts: () => document.querySelectorAll('.kanban-list').forEach(l => l.previousElementSibling.querySelector('.count').innerText = l.children.length)
         };
 
-        // --- RELATÓRIOS ---
+        // RELATÓRIOS (Mantido)
         window.app.openReports = () => {
             document.getElementById('reportsModal').classList.remove('hidden');
             const deals = window.app.deals;
-            
-            // 1. Funil Horizontal
             const stages = config.stages;
             const dataStage = Object.keys(stages).map(k => deals.filter(d => d.stage === k).reduce((acc, curr) => acc + (parseFloat(curr.value)||0), 0));
-            new Chart(document.getElementById('chartStage'), {
-                type: 'bar', // Barra normal
-                data: { labels: Object.values(stages).map(s => s.title), datasets: [{ label: 'Valor (R$)', data: dataStage, backgroundColor: '#3b82f6' }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } // indexAxis: 'y' faz ficar horizontal
-            });
-
-            // 2. Origem (Pizza)
+            new Chart(document.getElementById('chartStage'), { type: 'bar', data: { labels: Object.values(stages).map(s => s.title), datasets: [{ label: 'Valor (R$)', data: dataStage, backgroundColor: '#3b82f6' }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
             const channels = {}; deals.forEach(d => { const c = d.channel ? d.channel.split('::')[0] : 'Outros'; channels[c] = (channels[c]||0)+1; });
             new Chart(document.getElementById('chartChannel'), { type: 'doughnut', data: { labels: Object.keys(channels), datasets: [{ data: Object.values(channels), backgroundColor: ['#3b82f6', '#eab308', '#f97316'] }] }, options: { maintainAspectRatio: false } });
-
-            // 3. Motivos de Perda (Barras)
             const losses = {}; deals.filter(d => d.stage === 'perdido').forEach(d => { const r = d.loss_reason || 'Não informado'; losses[r] = (losses[r]||0)+1; });
             new Chart(document.getElementById('chartLoss'), { type: 'bar', data: { labels: Object.keys(losses), datasets: [{ label: 'Qtd', data: Object.values(losses), backgroundColor: '#ef4444' }] }, options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
         };
         
-        window.app.exportCSV = window.app.exportCSV; // Mantém a anterior
+        window.app.exportCSV = window.app.exportCSV; 
         document.addEventListener('DOMContentLoaded', window.app.init);
     </script>
 </body>
