@@ -193,13 +193,20 @@
     <div id="settingsModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50">
         <div class="bg-white dark:bg-slate-800 rounded-lg w-96 p-6 shadow-2xl border dark:border-slate-700">
             <h2 class="font-bold text-lg mb-4 text-gray-800 dark:text-white">🔌 Conexões</h2>
+            <div class="bg-yellow-50 dark:bg-yellow-900/30 p-2 rounded mb-4 text-[10px] text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
+                <i class="fa-solid fa-lock"></i> <b>Área Segura:</b> Configurações protegidas.
+            </div>
             <input type="text" id="sbUrl" placeholder="Supabase URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
             <input type="password" id="sbKey" placeholder="Supabase Key" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
             <hr class="my-2 dark:border-slate-600">
             <input type="text" id="cwUrl" placeholder="Chatwoot URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
             <input type="text" id="cwToken" placeholder="Chatwoot Token" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
             <input type="text" id="cwAccount" placeholder="Account ID" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs">
-            <button onclick="window.app.saveSettings()" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold">Salvar</button>
+            
+            <div class="flex gap-2 mt-6">
+                <button onclick="window.ui.toggleSettings()" class="w-1/3 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300 py-2.5 rounded-lg font-bold">Voltar</button>
+                <button onclick="window.app.saveSettings()" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold">Salvar</button>
+            </div>
         </div>
     </div>
 
@@ -228,10 +235,12 @@
             deals: [], products: [], reasons: [], pendingDrag: null, currentDealId: null,
 
             init: async () => {
-                if(!config.sbUrl) return window.ui.toggleSettings();
-                window.app.supabase = window.supabase.createClient(config.sbUrl, config.sbKey);
-                window.ui.renderBoard();
-                await Promise.all([window.app.loadProducts(), window.app.loadReasons(), window.app.loadDeals()]);
+                if(!config.sbUrl) return window.ui.toggleSettings(); // Aqui ele vai pedir senha se nao tiver config
+                try {
+                    window.app.supabase = window.supabase.createClient(config.sbUrl, config.sbKey);
+                    window.ui.renderBoard();
+                    await Promise.all([window.app.loadProducts(), window.app.loadReasons(), window.app.loadDeals()]);
+                } catch(e) { console.error(e); }
             },
 
             loadDeals: async () => {
@@ -249,151 +258,78 @@
             loadProducts: async () => { const {data} = await window.app.supabase.from('products').select('*').order('name'); window.app.products = data || []; window.ui.renderProductSelect(); },
             loadReasons: async () => { const {data} = await window.app.supabase.from('loss_reasons').select('*').order('name'); window.app.reasons = data || []; },
 
-            // TIMELINE: Carregar e Mostrar
             loadTimeline: async (dealId) => {
                 const list = document.getElementById('timelineList');
                 list.innerHTML = '<div class="text-center text-gray-400"><i class="fa-solid fa-spinner fa-spin"></i></div>';
-                
                 const { data } = await window.app.supabase.from('timeline').select('*').eq('deal_id', dealId).order('created_at', {ascending: true});
-                
-                if(!data || data.length === 0) {
-                    list.innerHTML = '<div class="text-center text-gray-400 mt-10">Nenhum histórico.</div>';
-                    return;
-                }
-
+                if(!data || data.length === 0) { list.innerHTML = '<div class="text-center text-gray-400 mt-10">Nenhum histórico.</div>'; return; }
                 list.innerHTML = data.map(t => {
                     const date = new Date(t.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' });
                     let icon = 'fa-comment', color = 'bg-blue-100 text-blue-600';
-                    
                     if(t.action_type === 'criacao') { icon = 'fa-plus'; color = 'bg-green-100 text-green-600'; }
                     if(t.action_type === 'mudanca_etapa') { icon = 'fa-arrow-right'; color = 'bg-purple-100 text-purple-600'; }
                     if(t.action_type === 'perda') { icon = 'fa-thumbs-down'; color = 'bg-red-100 text-red-600'; }
                     if(t.action_type === 'edicao') { icon = 'fa-pen'; color = 'bg-yellow-100 text-yellow-600'; }
-
-                    return `
-                        <div class="flex gap-3 animate-fade-in">
-                            <div class="mt-1 flex-shrink-0 w-6 h-6 rounded-full ${color} flex items-center justify-center text-[10px]"><i class="fa-solid ${icon}"></i></div>
-                            <div class="flex-1 bg-white dark:bg-slate-700/50 p-2 rounded-lg border dark:border-slate-600">
-                                <p class="text-gray-800 dark:text-gray-200">${t.description}</p>
-                                <span class="text-[10px] text-gray-400 block mt-1 text-right">${date}</span>
-                            </div>
-                        </div>
-                    `;
+                    return `<div class="flex gap-3 animate-fade-in"><div class="mt-1 flex-shrink-0 w-6 h-6 rounded-full ${color} flex items-center justify-center text-[10px]"><i class="fa-solid ${icon}"></i></div><div class="flex-1 bg-white dark:bg-slate-700/50 p-2 rounded-lg border dark:border-slate-600"><p class="text-gray-800 dark:text-gray-200">${t.description}</p><span class="text-[10px] text-gray-400 block mt-1 text-right">${date}</span></div></div>`;
                 }).join('');
                 list.scrollTop = list.scrollHeight;
             },
 
             addNote: async (e) => {
                 e.preventDefault();
-                const input = document.getElementById('newNoteInput');
-                const text = input.value.trim();
-                const dealId = document.getElementById('dealId').value;
+                const input = document.getElementById('newNoteInput'); const text = input.value.trim(); const dealId = document.getElementById('dealId').value;
                 if(!text || !dealId) return;
-
                 await window.app.supabase.from('timeline').insert([{ deal_id: dealId, action_type: 'nota', description: text }]);
-                input.value = '';
-                window.app.loadTimeline(dealId);
+                input.value = ''; window.app.loadTimeline(dealId);
             },
 
             saveDeal: async (e, stageOverride = null) => {
                 if(e) e.preventDefault();
                 const id = document.getElementById('dealId').value;
-                const deal = {
-                    title: document.getElementById('dealTitle').value,
-                    company: document.getElementById('dealCompany').value,
-                    product: document.getElementById('dealProduct').value,
-                    email: document.getElementById('dealEmail').value,
-                    phone: document.getElementById('dealPhone').value,
-                    value: document.getElementById('dealValue').value || 0,
-                    chatwoot_id: document.getElementById('dealChatId').value,
-                    channel: document.getElementById('dealChannel').value,
-                    meeting_date: document.getElementById('dealMeeting').value || null,
-                    closing_date: document.getElementById('dealClosing').value || null,
-                };
+                const deal = { title: document.getElementById('dealTitle').value, company: document.getElementById('dealCompany').value, product: document.getElementById('dealProduct').value, email: document.getElementById('dealEmail').value, phone: document.getElementById('dealPhone').value, value: document.getElementById('dealValue').value || 0, chatwoot_id: document.getElementById('dealChatId').value, channel: document.getElementById('dealChannel').value, meeting_date: document.getElementById('dealMeeting').value || null, closing_date: document.getElementById('dealClosing').value || null };
                 if(stageOverride) deal.stage = stageOverride;
-
-                let dealId = id;
-                if (!id) {
-                    deal.stage = deal.stage || 'prospeccao';
-                    const { data, error } = await window.app.supabase.from('deals').insert([deal]).select();
-                    if(error) return alert(error.message);
-                    dealId = data[0].id; 
-                    // Obs: A criação é logada pelo TRIGGER agora, não precisamos inserir na timeline manual aqui, 
-                    // a menos que queiramos forçar refresh imediato.
-                } else {
-                    await window.app.supabase.from('deals').update(deal).eq('id', id);
-                }
-
-                window.ui.closeModal();
-                window.app.loadDeals();
+                if (!id) { deal.stage = deal.stage || 'prospeccao'; await window.app.supabase.from('deals').insert([deal]); } 
+                else { await window.app.supabase.from('deals').update(deal).eq('id', id); }
+                window.ui.closeModal(); window.app.loadDeals();
                 if(stageOverride === 'ganho') window.app.triggerConfetti();
             },
 
-            deleteDeal: async () => {
-                const id = document.getElementById('dealId').value;
-                if(!id) return;
-                const result = await Swal.fire({ title: 'Excluir?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
-                if (result.isConfirmed) {
-                    await window.app.supabase.from('deals').delete().eq('id', id);
-                    window.ui.closeModal();
-                    window.app.loadDeals();
-                }
-            },
-
+            deleteDeal: async () => { if(!confirm('Excluir negócio?')) return; await window.app.supabase.from('deals').delete().eq('id', document.getElementById('dealId').value); window.ui.closeModal(); window.app.loadDeals(); },
+            
             moveDeal: async (id, newStage, oldStage) => {
-                if(newStage === 'perdido') {
-                    window.app.pendingDrag = id;
-                    window.ui.renderReasonSelect();
-                    document.getElementById('selectReasonModal').classList.remove('hidden');
-                } else {
-                    await window.app.supabase.from('deals').update({ stage: newStage }).eq('id', id);
-                    if(newStage === 'ganho') window.app.triggerConfetti();
-                    window.app.loadDeals();
-                }
+                if(newStage === 'perdido') { window.app.pendingDrag = id; window.ui.renderReasonSelect(); document.getElementById('selectReasonModal').classList.remove('hidden'); }
+                else { await window.app.supabase.from('deals').update({ stage: newStage }).eq('id', id); if(newStage === 'ganho') window.app.triggerConfetti(); window.app.loadDeals(); }
             },
 
             confirmLoss: async () => {
-                const r = document.getElementById('lossReasonSelect').value;
-                if(!r) return alert("Selecione um motivo!");
+                const r = document.getElementById('lossReasonSelect').value; if(!r) return alert("Selecione um motivo!");
                 let id = window.app.pendingDrag || document.getElementById('dealId').value;
-                
                 await window.app.supabase.from('deals').update({ stage: 'perdido', loss_reason: r }).eq('id', id);
-                
-                window.app.pendingDrag = null;
-                document.getElementById('selectReasonModal').classList.add('hidden');
-                window.ui.closeModal();
-                window.app.loadDeals();
+                window.app.pendingDrag = null; document.getElementById('selectReasonModal').classList.add('hidden'); window.ui.closeModal(); window.app.loadDeals();
             },
 
-            // UTILITARIOS
             requestLoss: () => { window.ui.renderReasonSelect(); document.getElementById('selectReasonModal').classList.remove('hidden'); },
             saveProduct: async (e) => { e.preventDefault(); await window.app.supabase.from('products').insert([{ name: document.getElementById('newProductName').value }]); document.getElementById('newProductName').value=''; window.app.loadProducts(); window.ui.renderProductsList(); },
             saveReason: async (e) => { e.preventDefault(); await window.app.supabase.from('loss_reasons').insert([{ name: document.getElementById('newReasonName').value }]); document.getElementById('newReasonName').value=''; window.app.loadReasons(); window.ui.renderReasonsList(); },
             deleteAux: async (table, id, callback) => { if(confirm('Excluir?')) { await window.app.supabase.from(table).delete().eq('id', id); callback(); } },
-            fetchChatwootData: async () => { /* Logica de busca igual a anterior */ 
-                const query = document.getElementById('dealPhone').value.trim();
-                if(!query) return;
+            fetchChatwootData: async () => { 
+                const query = document.getElementById('dealPhone').value.trim(); if(!query) return;
                 try {
                     let res = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/search?q=${query}`, { headers: { 'api_access_token': config.cwToken } });
-                    let json = await res.json();
-                    let contact = json.payload?.[0];
-                    if(!contact && !isNaN(query)) {
-                         let cRes = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/conversations/${query}`, { headers: { 'api_access_token': config.cwToken } });
-                         if(cRes.ok) { let c = await cRes.json(); contact = c.meta.sender; document.getElementById('dealChatId').value = c.id; document.getElementById('dealChannel').value = c.meta.channel; }
-                    }
-                    if(contact) {
-                        document.getElementById('dealTitle').value = contact.name;
-                        document.getElementById('dealEmail').value = contact.email;
-                        document.getElementById('dealPhone').value = contact.phone_number;
-                        document.getElementById('dealCompany').value = contact.additional_attributes?.company_name || '';
-                         if(!document.getElementById('dealChatId').value) {
-                             let convs = await (await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/${contact.id}/conversations`, { headers: { 'api_access_token': config.cwToken } })).json();
-                             if(convs.payload?.[0]) { document.getElementById('dealChatId').value = convs.payload[0].id; document.getElementById('dealChannel').value = convs.payload[0].meta.channel; }
-                         }
-                    } else alert("Não encontrado");
+                    let json = await res.json(); let contact = json.payload?.[0];
+                    if(!contact && !isNaN(query)) { let cRes = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/conversations/${query}`, { headers: { 'api_access_token': config.cwToken } }); if(cRes.ok) { let c = await cRes.json(); contact = c.meta.sender; document.getElementById('dealChatId').value = c.id; document.getElementById('dealChannel').value = c.meta.channel; } }
+                    if(contact) { document.getElementById('dealTitle').value = contact.name; document.getElementById('dealEmail').value = contact.email; document.getElementById('dealPhone').value = contact.phone_number; document.getElementById('dealCompany').value = contact.additional_attributes?.company_name || ''; if(!document.getElementById('dealChatId').value) { let convs = await (await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/${contact.id}/conversations`, { headers: { 'api_access_token': config.cwToken } })).json(); if(convs.payload?.[0]) { document.getElementById('dealChatId').value = convs.payload[0].id; document.getElementById('dealChannel').value = convs.payload[0].meta.channel; } } } else alert("Não encontrado");
                 } catch(e) { console.error(e); }
             },
-            triggerConfetti: () => { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
+            triggerConfetti: () => { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); },
+            saveSettings: () => {
+                localStorage.setItem('crm_sb_url', document.getElementById('sbUrl').value.trim());
+                localStorage.setItem('crm_sb_key', document.getElementById('sbKey').value.trim());
+                localStorage.setItem('crm_cw_url', document.getElementById('cwUrl').value.replace(/\/$/, ""));
+                localStorage.setItem('crm_cw_token', document.getElementById('cwToken').value.trim());
+                localStorage.setItem('crm_cw_account', document.getElementById('cwAccount').value.trim());
+                location.reload();
+            }
         };
 
         window.ui = {
@@ -407,101 +343,70 @@
                     new Sortable(c.querySelector('.kanban-list'), { group: 'deals', animation: 150, ghostClass: 'ghost-card', onEnd: (evt) => { if (evt.to.dataset.stage !== evt.from.dataset.stage) window.app.moveDeal(evt.item.dataset.id, evt.to.dataset.stage, evt.from.dataset.stage); } });
                 });
             },
-            
-            // --- VISUAL DO CARD RESTAURADO ---
             createCard: (d) => {
                 const el = document.createElement('div');
                 el.className = 'deal-card bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 cursor-pointer transition relative group';
                 el.dataset.id = d.id; el.onclick = (e) => { if(!e.target.closest('a')) window.ui.editDeal(d); };
                 const val = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.value);
                 const date = new Date(d.created_at).toLocaleDateString('pt-BR').slice(0,5);
-                
                 let lossBadge = (d.stage === 'perdido' && d.loss_reason) ? `<div class="text-[10px] bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-0.5 rounded border border-red-200 dark:border-red-800 font-bold mb-2 inline-block"><i class="fa-solid fa-thumbs-down"></i> ${d.loss_reason}</div>` : '';
                 let productBadge = d.product ? `<span class="text-[10px] bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded border border-orange-200 dark:border-orange-800 font-semibold mb-2 inline-block ml-1"><i class="fa-solid fa-box"></i> ${d.product}</span>` : '';
-                
                 let datesHtml = '';
                 if(d.meeting_date) datesHtml += `<div class="text-[10px] bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded border border-yellow-100 dark:border-yellow-800 flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${new Date(d.meeting_date).toLocaleDateString().slice(0,5)}</div>`;
                 if(d.closing_date) datesHtml += `<div class="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-1 rounded border border-purple-200 dark:border-purple-800 flex items-center gap-1"><i class="fa-solid fa-flag-checkered"></i> ${new Date(d.closing_date).toLocaleDateString().slice(0,5)}</div>`;
-
                 let chatLink = d.chatwoot_id ? `<a href="${config.cwUrl}/app/accounts/${config.cwAccount}/conversations/${d.chatwoot_id}" target="_blank" class="text-xs bg-slate-700 text-white px-3 py-1.5 rounded hover:bg-slate-600 flex items-center gap-2 font-medium" onclick="event.stopPropagation()"><i class="fa-regular fa-comments"></i> Chat</a>` : '';
-
-                el.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase truncate max-w-[150px]">${d.company||'Particular'}</span>
-                        <span class="text-[10px] text-gray-300 dark:text-gray-600">${date}</span>
-                    </div>
-                    ${lossBadge}
-                    ${productBadge}
-                    <h4 class="font-bold text-gray-800 dark:text-gray-200 text-sm mb-1 truncate">${d.title}</h4>
-                    <p class="font-mono text-xs text-gray-600 dark:text-gray-400 font-medium mb-3">${val}</p>
-                    <div class="flex flex-wrap gap-2 mb-3">${datesHtml}</div>
-                    <div class="pt-2 mt-2 border-t dark:border-slate-700">${chatLink}</div>
-                `;
+                el.innerHTML = `<div class="flex justify-between items-start mb-2"><span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase truncate max-w-[150px]">${d.company||'Particular'}</span><span class="text-[10px] text-gray-300 dark:text-gray-600">${date}</span></div>${lossBadge}${productBadge}<h4 class="font-bold text-gray-800 dark:text-gray-200 text-sm mb-1 truncate">${d.title}</h4><p class="font-mono text-xs text-gray-600 dark:text-gray-400 font-medium mb-3">${val}</p><div class="flex flex-wrap gap-2 mb-3">${datesHtml}</div><div class="pt-2 mt-2 border-t dark:border-slate-700">${chatLink}</div>`;
                 return el;
             },
-
             editDeal: (d) => {
-                document.getElementById('dealId').value = d.id;
-                document.getElementById('dealTitle').value = d.title;
-                document.getElementById('dealCompany').value = d.company || '';
-                document.getElementById('dealProduct').value = d.product || '';
-                document.getElementById('dealEmail').value = d.email || '';
-                document.getElementById('dealPhone').value = d.phone || '';
-                document.getElementById('dealValue').value = d.value;
-                document.getElementById('dealChatId').value = d.chatwoot_id || '';
-                document.getElementById('dealChannel').value = d.channel || '';
-                document.getElementById('dealMeeting').value = d.meeting_date ? new Date(d.meeting_date).toISOString().slice(0,16) : '';
-                document.getElementById('dealClosing').value = d.closing_date || '';
-                
-                document.getElementById('modalTitle').innerText = 'Editar Negócio';
-                document.getElementById('btnDelete').classList.remove('hidden');
-                document.getElementById('btnLoss').classList.remove('hidden');
-                document.getElementById('btnWin').classList.remove('hidden');
-                
-                window.app.loadTimeline(d.id); 
-                document.getElementById('dealModal').classList.remove('hidden');
+                document.getElementById('dealId').value = d.id; document.getElementById('dealTitle').value = d.title; document.getElementById('dealCompany').value = d.company || ''; document.getElementById('dealProduct').value = d.product || ''; document.getElementById('dealEmail').value = d.email || ''; document.getElementById('dealPhone').value = d.phone || ''; document.getElementById('dealValue').value = d.value; document.getElementById('dealChatId').value = d.chatwoot_id || ''; document.getElementById('dealChannel').value = d.channel || ''; document.getElementById('dealMeeting').value = d.meeting_date ? new Date(d.meeting_date).toISOString().slice(0,16) : ''; document.getElementById('dealClosing').value = d.closing_date || '';
+                document.getElementById('modalTitle').innerText = 'Editar Negócio'; document.getElementById('btnDelete').classList.remove('hidden'); document.getElementById('btnLoss').classList.remove('hidden'); document.getElementById('btnWin').classList.remove('hidden');
+                window.app.loadTimeline(d.id); document.getElementById('dealModal').classList.remove('hidden');
             },
             openModal: () => { 
-                document.getElementById('dealForm').reset(); 
-                document.getElementById('dealId').value = ''; 
+                document.getElementById('dealForm').reset(); document.getElementById('dealId').value = ''; 
                 document.getElementById('timelineList').innerHTML = '<div class="text-center text-gray-400 mt-10">Salve o negócio para adicionar notas.</div>';
-                document.getElementById('dealModal').classList.remove('hidden'); 
-                document.getElementById('modalTitle').innerText = 'Novo Negócio'; 
-                document.getElementById('btnDelete').classList.add('hidden');
-                document.getElementById('btnLoss').classList.add('hidden');
-                document.getElementById('btnWin').classList.add('hidden');
+                document.getElementById('dealModal').classList.remove('hidden'); document.getElementById('modalTitle').innerText = 'Novo Negócio'; 
+                document.getElementById('btnDelete').classList.add('hidden'); document.getElementById('btnLoss').classList.add('hidden'); document.getElementById('btnWin').classList.add('hidden');
             },
             closeModal: () => document.getElementById('dealModal').classList.add('hidden'),
             
-            // Auxiliares (Products/Reasons/Settings)
-            openProductsModal: () => { document.getElementById('productsModal').classList.remove('hidden'); window.ui.renderProductsList(); },
-            renderProductsList: () => document.getElementById('productsList').innerHTML = window.app.products.map(p => `<div class="flex justify-between bg-gray-50 dark:bg-slate-700 p-2 rounded"><span class="dark:text-white">${p.name}</span><button onclick="window.app.deleteAux('products', ${p.id}, window.app.loadProducts)" class="text-red-400"><i class="fa-solid fa-trash"></i></button></div>`).join(''),
-            renderProductSelect: () => document.getElementById('dealProduct').innerHTML = '<option value="">Selecione...</option>' + window.app.products.map(p => `<option value="${p.name}">${p.name}</option>`).join(''),
-            openReasonsModal: () => { document.getElementById('reasonsModal').classList.remove('hidden'); window.ui.renderReasonsList(); },
-            renderReasonsList: () => document.getElementById('reasonsList').innerHTML = window.app.reasons.map(p => `<div class="flex justify-between bg-gray-50 dark:bg-slate-700 p-2 rounded"><span class="dark:text-white">${p.name}</span><button onclick="window.app.deleteAux('loss_reasons', ${p.id}, window.app.loadReasons)" class="text-red-400"><i class="fa-solid fa-trash"></i></button></div>`).join(''),
-            renderReasonSelect: () => document.getElementById('lossReasonSelect').innerHTML = '<option value="">Selecione...</option>' + window.app.reasons.map(p => `<option value="${p.name}">${p.name}</option>`).join(''),
-            cancelLoss: () => { window.app.pendingDrag = null; document.getElementById('selectReasonModal').classList.add('hidden'); window.app.loadDeals(); },
-            confirmLoss: window.app.confirmLoss,
-            toggleSettings: () => document.getElementById('settingsModal').classList.toggle('hidden'),
+            openProductsModal: window.ui.openProductsModal, renderProductsList: window.ui.renderProductsList, renderProductSelect: window.ui.renderProductSelect,
+            openReasonsModal: window.ui.openReasonsModal, renderReasonsList: window.ui.renderReasonsList, renderReasonSelect: window.ui.renderReasonSelect,
+            cancelLoss: window.ui.cancelLoss, confirmLoss: window.ui.confirmLoss,
+            
+            // TRAVA DE SEGURANÇA NA ENGRENAGEM
+            toggleSettings: async () => {
+                const modal = document.getElementById('settingsModal');
+                if (!modal.classList.contains('hidden')) { modal.classList.add('hidden'); return; }
+
+                const { value: password } = await Swal.fire({
+                    title: 'Acesso Restrito',
+                    input: 'password',
+                    inputLabel: 'Senha de Administrador',
+                    inputPlaceholder: 'Digite a senha...',
+                    showCancelButton: true,
+                    confirmButtonText: 'Entrar',
+                    confirmButtonColor: '#3b82f6'
+                });
+
+                if (password === 'Be@More@2026@kanban') {
+                    modal.classList.remove('hidden');
+                    document.getElementById('sbUrl').value = config.sbUrl;
+                    document.getElementById('sbKey').value = config.sbKey;
+                    document.getElementById('cwUrl').value = config.cwUrl;
+                    document.getElementById('cwToken').value = config.cwToken;
+                    document.getElementById('cwAccount').value = config.cwAccount;
+                } else if (password) {
+                    Swal.fire('Erro', 'Senha incorreta!', 'error');
+                }
+            },
+            
             saveSettings: window.app.saveSettings,
-            updateCounts: () => document.querySelectorAll('.kanban-list').forEach(l => l.previousElementSibling.querySelector('.count').innerText = l.children.length)
+            updateCounts: window.ui.updateCounts
         };
 
-        // RELATÓRIOS
-        window.app.openReports = () => {
-            document.getElementById('reportsModal').classList.remove('hidden');
-            const deals = window.app.deals;
-            const stages = config.stages;
-            const dataStage = Object.keys(stages).map(k => deals.filter(d => d.stage === k).reduce((acc, curr) => acc + (parseFloat(curr.value)||0), 0));
-            new Chart(document.getElementById('chartStage'), { type: 'bar', data: { labels: Object.values(stages).map(s => s.title), datasets: [{ label: 'Valor (R$)', data: dataStage, backgroundColor: '#3b82f6' }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-            const channels = {}; deals.forEach(d => { const c = d.channel ? d.channel.split('::')[0] : 'Outros'; channels[c] = (channels[c]||0)+1; });
-            new Chart(document.getElementById('chartChannel'), { type: 'doughnut', data: { labels: Object.keys(channels), datasets: [{ data: Object.values(channels), backgroundColor: ['#3b82f6', '#eab308', '#f97316'] }] }, options: { maintainAspectRatio: false } });
-            const losses = {}; deals.filter(d => d.stage === 'perdido').forEach(d => { const r = d.loss_reason || 'Não informado'; losses[r] = (losses[r]||0)+1; });
-            new Chart(document.getElementById('chartLoss'), { type: 'bar', data: { labels: Object.keys(losses), datasets: [{ label: 'Qtd', data: Object.values(losses), backgroundColor: '#ef4444' }] }, options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
-        };
-        
-        window.app.exportCSV = window.app.exportCSV; 
-        document.addEventListener('DOMContentLoaded', window.app.init);
+        window.app.openReports = window.app.openReports; window.app.exportCSV = window.app.exportCSV; document.addEventListener('DOMContentLoaded', window.app.init);
     </script>
 </body>
 </html>
