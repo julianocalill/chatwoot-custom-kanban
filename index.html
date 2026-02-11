@@ -26,6 +26,7 @@
         .dark .ghost-card { background: #1e293b; border-color: #3b82f6; }
         .deal-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
+        /* Badges de Canais */
         .channel-icon.whatsapp { color: #25D366; background: #dcf8c6; }
         .channel-icon.web_widget { color: #3b82f6; background: #dbeafe; }
         .channel-icon.api { color: #8b5cf6; background: #ede9fe; }
@@ -73,7 +74,9 @@
             <div class="flex-1 overflow-y-auto custom-scrollbar pr-2">
                 <div class="flex justify-between items-center mb-6 border-b dark:border-slate-700 pb-4">
                     <h2 class="text-xl font-bold text-gray-800 dark:text-white" id="modalTitle">Novo Negócio</h2>
-                    <button onclick="window.ui.closeModal()" class="text-gray-400 hover:text-red-500 text-2xl px-2">&times;</button>
+                    <button onclick="window.ui.closeModal()" class="text-gray-400 hover:text-red-500 text-xl transition px-2">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                 </div>
                 
                 <form id="dealForm" onsubmit="window.app.saveDeal(event)">
@@ -110,7 +113,9 @@
                         <div class="flex gap-2 ml-auto items-center">
                              <button type="button" onclick="window.app.requestLoss()" id="btnLoss" class="hidden px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 rounded-lg font-bold text-xs uppercase"><i class="fa-solid fa-thumbs-down"></i> Perdido</button>
                              <button type="button" onclick="window.app.saveDeal(event, 'ganho')" id="btnWin" class="hidden px-3 py-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 rounded-lg font-bold text-xs uppercase"><i class="fa-solid fa-trophy"></i> Ganho</button>
+                            
                             <button type="button" onclick="window.ui.closeModal()" class="px-4 py-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-700 rounded-lg font-bold transition ml-2">Cancelar</button>
+                            
                             <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold ml-2">Salvar</button>
                         </div>
                     </div>
@@ -194,12 +199,12 @@
     <div id="settingsModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50">
         <div class="bg-white dark:bg-slate-800 rounded-lg w-96 p-6 shadow-2xl border dark:border-slate-700">
             <h2 class="font-bold text-lg mb-4 text-gray-800 dark:text-white">🔌 Conexões</h2>
-            <input type="password" id="sbUrl" placeholder="Supabase URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
+            <input type="text" id="sbUrl" placeholder="Supabase URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
             <input type="password" id="sbKey" placeholder="Supabase Key" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
             <hr class="my-2 dark:border-slate-600">
-            <input type="password" id="cwUrl" placeholder="Chatwoot URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
-            <input type="password" id="cwToken" placeholder="Chatwoot Token" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
-            <input type="password" id="cwAccount" placeholder="Account ID" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs">
+            <input type="text" id="cwUrl" placeholder="Chatwoot URL" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
+            <input type="text" id="cwToken" placeholder="Chatwoot Token" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs mb-2">
+            <input type="text" id="cwAccount" placeholder="Account ID" class="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white p-2 rounded text-xs">
             <button onclick="window.app.saveSettings()" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold">Salvar</button>
         </div>
     </div>
