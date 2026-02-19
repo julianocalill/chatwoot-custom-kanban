@@ -538,7 +538,15 @@
                 location.reload();
             },
 
-            fetchChatwootData: async () => { alert("Configurar integração Chatwoot nas opções."); }
+            fetchChatwootData: async () => { 
+                const query = document.getElementById('dealPhone').value.trim(); if(!query) return;
+                try {
+                    let res = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/search?q=${query}`, { headers: { 'api_access_token': config.cwToken } });
+                    let json = await res.json(); let contact = json.payload?.[0];
+                    if(!contact && !isNaN(query)) { let cRes = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/conversations/${query}`, { headers: { 'api_access_token': config.cwToken } }); if(cRes.ok) { let c = await cRes.json(); contact = c.meta.sender; document.getElementById('dealChatId').value = c.id; document.getElementById('dealChannel').value = c.meta.channel; } }
+                    if(contact) { document.getElementById('dealTitle').value = contact.name; document.getElementById('dealEmail').value = contact.email; document.getElementById('dealPhone').value = contact.phone_number; document.getElementById('dealCompany').value = contact.additional_attributes?.company_name || ''; if(!document.getElementById('dealChatId').value) { let convs = await (await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/${contact.id}/conversations`, { headers: { 'api_access_token': config.cwToken } })).json(); if(convs.payload?.[0]) { document.getElementById('dealChatId').value = convs.payload[0].id; document.getElementById('dealChannel').value = convs.payload[0].meta.channel; } } } else alert("Não encontrado no Chatwoot");
+                } catch(e) { console.error(e); alert("Erro ao buscar no Chatwoot. Verifique as credenciais na engrenagem."); }
+            }
         };
 
         window.ui = ui;
@@ -547,3 +555,4 @@
     </script>
 </body>
 </html>
+
