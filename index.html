@@ -85,7 +85,7 @@
                     <div class="space-y-3">
                         <div class="grid grid-cols-2 gap-3">
                             <div><label class="text-[10px] uppercase font-bold text-gray-500">Cliente</label><input type="text" id="dealTitle" required class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
-                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Email</label><input type="email" id="dealEmail" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
+                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Empresa</label><input type="text" id="dealCompany" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
                         </div>
                         
                         <div class="grid grid-cols-2 gap-3">
@@ -97,20 +97,26 @@
                                 <label class="text-[10px] uppercase font-bold text-gray-500">Status Insucesso</label>
                                 <select id="dealInsucesso" class="w-full bg-bg border border-border rounded p-2 text-gray-300 focus:border-primary outline-none">
                                     <option value="">Nenhum...</option>
-                                    <option value="Não Atende / Não Responde">Não Atende / Não Responde</option>
-                                    <option value="Não consegue retirar / DDD longe">Não consegue retirar / DDD longe</option>
-                                    <option value="Avaliação V.U abaixo do esperado">Avaliação V.U abaixo do esperado</option>
-                                    <option value="Parcela fora do esperado">Parcela fora do esperado</option>
-                                    <option value="Compra futura">Compra futura</option>
-                                    <option value="Sem intenção de compra">Sem intenção de compra</option>
+                                    <option value="NAO ATENDE / NAO RESPONDE">NAO ATENDE / NAO RESPONDE</option>
+                                    <option value="NAO CONSEGUE RETIRAR / DDD LONGE">NAO CONSEGUE RETIRAR / DDD LONGE</option>
+                                    <option value="AVALIAÇÃO V.U ABAIXO DO ESPERADO">AVALIAÇÃO V.U ABAIXO DO ESPERADO</option>
+                                    <option value="PARCELA FORA DO ESPERADO">PARCELA FORA DO ESPERADO</option>
+                                    <option value="COMPRA FUTURA">COMPRA FUTURA</option>
+                                    <option value="SEM INTENÇÃO DE COMPRA">SEM INTENÇÃO DE COMPRA</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3">
+                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Email</label><input type="email" id="dealEmail" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
+                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Canal</label><input type="text" id="dealChannel" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3">
                             <div><label class="text-[10px] uppercase font-bold text-gray-500">Valor (R$)</label><input type="number" id="dealValue" step="0.01" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none font-mono"></div>
+                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Chat ID</label><input type="text" id="dealChatId" class="w-full bg-bg border border-border rounded p-2 text-gray-400 bg-black/20 outline-none"></div>
                             <div><label class="text-[10px] uppercase font-bold text-gray-500">Prev. Fechamento</label><input type="date" id="dealClosing" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
                         </div>
+                        <div><label class="text-[10px] uppercase font-bold text-gray-500">Data Reunião</label><input type="datetime-local" id="dealMeeting" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
                     </div>
                     <div class="mt-8 flex justify-between items-center pt-4 border-t border-border">
                         <button type="button" onclick="window.app.deleteDeal()" id="btnDelete" class="text-red-500 hover:text-red-400 hidden"><i class="fa-solid fa-trash-can"></i></button>
@@ -192,12 +198,14 @@
 
     <script>
         const config = {
+            // NOVO: Adicionado o estágio INSUCESSO depois do ganho
             stages: {
                 'prospeccao': { title: 'Prospecção', color: 'bg-blue-500' },
                 'qualificacao': { title: 'Qualificação', color: 'bg-yellow-500' },
                 'proposta': { title: 'Proposta', color: 'bg-orange-500' },
                 'negociacao': { title: 'Negociação', color: 'bg-purple-500' },
-                'ganho': { title: 'Ganho', color: 'bg-green-600' }
+                'ganho': { title: 'Ganho', color: 'bg-green-600' },
+                'insucesso': { title: 'Insucesso', color: 'bg-slate-500' } 
             },
             sbUrl: localStorage.getItem('crm_sb_url') || '',
             sbKey: localStorage.getItem('crm_sb_key') || '',
@@ -238,7 +246,6 @@
                 const val = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.value || 0);
                 const date = new Date(d.created_at).toLocaleDateString('pt-BR').slice(0, 5);
                 
-                // NOVO: Etiqueta Insucesso (Cor de Atenção Laranja)
                 const insucessoBadge = d.insucesso ? `<div class="text-[10px] bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded inline-block mb-2 border border-orange-500/20 truncate max-w-full mr-1"><i class="fa-solid fa-triangle-exclamation"></i> ${d.insucesso}</div>` : '';
                 const productBadge = d.product ? `<div class="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded inline-block mb-2 border border-primary/20 truncate max-w-full"><i class="fa-solid fa-car"></i> ${d.product}</div>` : '';
                 
@@ -264,12 +271,15 @@
             editDeal: (d) => {
                 document.getElementById('dealId').value = d.id;
                 document.getElementById('dealTitle').value = d.title;
+                document.getElementById('dealCompany').value = d.company || '';
                 document.getElementById('dealEmail').value = d.email || '';
                 document.getElementById('dealPhone').value = d.phone || '';
                 document.getElementById('dealValue').value = d.value || 0;
                 document.getElementById('dealChatId').value = d.chatwoot_id || '';
+                document.getElementById('dealChannel').value = d.channel || '';
+                document.getElementById('dealMeeting').value = d.meeting_date ? new Date(d.meeting_date).toISOString().slice(0,16) : '';
                 document.getElementById('dealClosing').value = d.closing_date || '';
-                document.getElementById('dealInsucesso').value = d.insucesso || ''; // Carrega Insucesso
+                document.getElementById('dealInsucesso').value = d.insucesso || ''; 
                 
                 window.app.loadVehicles().then(() => {
                     const select = document.getElementById('dealProduct');
@@ -286,7 +296,6 @@
             },
             toggleSettings: () => document.getElementById('settingsModal').classList.toggle('hidden'),
             
-            // Relatórios
             openReports: () => {
                 document.getElementById('reportsModal').classList.remove('hidden');
                 const deals = window.app.deals;
@@ -296,7 +305,6 @@
                 if(window.chart1) window.chart1.destroy();
                 window.chart1 = new Chart(document.getElementById('chartStage'), { type: 'bar', data: { labels: Object.values(stages).map(s => s.title), datasets: [{ label: 'Valor (R$)', data: dataStage, backgroundColor: '#3B82F6', borderRadius: 4 }] }, options: { indexAxis: 'y', maintainAspectRatio: false } });
 
-                // Loss Chart (Mock se não tiver dados)
                 const losses = {}; 
                 deals.filter(d => d.stage === 'perdido').forEach(d => { const r = d.loss_reason || 'Não informado'; losses[r] = (losses[r]||0)+1; });
                 
@@ -304,7 +312,6 @@
                 window.chart2 = new Chart(document.getElementById('chartLoss'), { type: 'doughnut', data: { labels: Object.keys(losses), datasets: [{ data: Object.values(losses), backgroundColor: ['#EF4444', '#F59E0B', '#10B981', '#3B82F6'] }] }, options: { maintainAspectRatio: false } });
             },
 
-            // Motivos
             openReasonsManager: () => {
                 document.getElementById('reasonsManagerModal').classList.remove('hidden');
                 window.ui.renderReasonsList();
@@ -363,7 +370,7 @@
             loadReasons: async () => {
                 const { data } = await window.app.supabase.from('loss_reasons').select('*').order('name');
                 window.app.reasons = data || [];
-                window.ui.renderReasonSelect(); // Atualiza o select do modal de perda
+                window.ui.renderReasonSelect(); 
             },
 
             saveReason: async (e) => {
@@ -390,7 +397,7 @@
 
             loadDeals: async () => {
                 const { data } = await window.app.supabase.from('deals').select('*').neq('stage', 'perdido').order('created_at', { ascending: false });
-                window.app.deals = data || []; // Guarda para relatórios
+                window.app.deals = data || []; 
                 document.querySelectorAll('.kanban-list').forEach(el => el.innerHTML = '');
                 let total = 0;
                 window.app.deals.forEach(d => {
@@ -408,25 +415,38 @@
                 const id = document.getElementById('dealId').value;
                 const selectProduct = document.getElementById('dealProduct');
                 
+                const chatwootIdValue = document.getElementById('dealChatId').value;
+                const finalChatwootId = chatwootIdValue === "" ? null : chatwootIdValue;
+                const insucessoValue = document.getElementById('dealInsucesso').value || null;
+
                 const deal = {
                     title: document.getElementById('dealTitle').value,
+                    company: document.getElementById('dealCompany').value,
                     email: document.getElementById('dealEmail').value,
                     phone: document.getElementById('dealPhone').value,
                     value: document.getElementById('dealValue').value || 0,
-                    chatwoot_id: document.getElementById('dealChatId').value || null,
+                    chatwoot_id: finalChatwootId,
+                    channel: document.getElementById('dealChannel').value,
+                    meeting_date: document.getElementById('dealMeeting').value || null,
                     closing_date: document.getElementById('dealClosing').value || null,
                     vehicle_id: selectProduct.value || null,
                     product: selectProduct.selectedIndex > 0 ? selectProduct.options[selectProduct.selectedIndex].text : null,
-                    insucesso: document.getElementById('dealInsucesso').value || null // NOVO: Salva Insucesso
+                    insucesso: insucessoValue
                 };
 
+                // LÓGICA DE AUTOMAÇÃO DE ETAPA
                 if (stageOverride) {
                     deal.stage = stageOverride;
                     if (stageOverride === 'ganho' && !deal.closing_date) deal.closing_date = new Date().toISOString().split('T')[0];
+                } else {
+                    if (insucessoValue) {
+                        deal.stage = 'insucesso'; // Move para insucesso automaticamente
+                    } else if (!id) {
+                        deal.stage = 'prospeccao'; // Padrão se for um negócio novo
+                    }
                 }
 
                 if (!id) {
-                    deal.stage = deal.stage || 'prospeccao';
                     await window.app.supabase.from('deals').insert([deal]);
                 } else {
                     await window.app.supabase.from('deals').update(deal).eq('id', id);
@@ -527,4 +547,3 @@
     </script>
 </body>
 </html>
-
