@@ -46,7 +46,13 @@
             <div id="total-pipeline" class="bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/30">R$ 0,00</div>
         </div>
         
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-center">
+            
+            <div class="bg-bg border border-border rounded-lg px-3 py-1.5 flex items-center gap-2 focus-within:border-primary/50 transition mr-2">
+                <i class="fa-solid fa-magnifying-glass text-gray-500"></i>
+                <input type="text" id="search-input" placeholder="Buscar lead..." class="bg-transparent text-gray-300 outline-none text-xs w-40" onkeypress="if(event.key === 'Enter') window.app.searchLead()">
+            </div>
+
             <button onclick="window.ui.openReasonsManager()" class="flex items-center gap-2 px-3 py-2 bg-card hover:bg-white/5 border border-border rounded text-gray-400 hover:text-white transition">
                 <i class="fa-solid fa-thumbs-down"></i> Motivos
             </button>
@@ -196,9 +202,19 @@
         </div>
     </div>
 
+    <div id="search-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[80] backdrop-blur-md" onclick="window.ui.closeSearch(event)">
+        <div class="bg-card border border-border p-6 rounded-xl w-[600px] max-w-[95vw] max-h-[80vh] flex flex-col shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-border pb-2">
+                <h3 class="text-white font-bold text-lg"><i class="fa-solid fa-magnifying-glass text-primary mr-2"></i> Resultado da Busca</h3>
+                <button onclick="window.ui.closeSearch(null, true)" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div id="search-results-list" class="overflow-y-auto custom-scrollbar space-y-3 pr-2 flex-1">
+                </div>
+        </div>
+    </div>
+
     <script>
         const config = {
-            // NOVO: Adicionado o estágio INSUCESSO depois do ganho
             stages: {
                 'prospeccao': { title: 'Prospecção', color: 'bg-blue-500' },
                 'qualificacao': { title: 'Qualificação', color: 'bg-yellow-500' },
@@ -296,6 +312,52 @@
             },
             toggleSettings: () => document.getElementById('settingsModal').classList.toggle('hidden'),
             
+            // FUNÇÕES DA PESQUISA
+            openSearch: () => {
+                document.getElementById('search-modal').classList.remove('hidden');
+                document.getElementById('search-modal').classList.add('flex');
+            },
+            closeSearch: (e, force) => {
+                if (force || e.target.id === 'search-modal') {
+                    document.getElementById('search-modal').classList.add('hidden');
+                    document.getElementById('search-modal').classList.remove('flex');
+                    document.getElementById('search-input').value = '';
+                }
+            },
+            renderSearchResults: (leads) => {
+                const container = document.getElementById('search-results-list');
+                if (!leads || leads.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-6">Nenhum lead encontrado.</p>';
+                    return;
+                }
+
+                container.innerHTML = leads.map(l => {
+                    const stageColor = config.stages[l.stage] ? config.stages[l.stage].color.replace('bg-', 'text-') : 'text-gray-400';
+                    const stageName = config.stages[l.stage] ? config.stages[l.stage].title : l.stage;
+                    const date = new Date(l.created_at).toLocaleDateString('pt-BR');
+                    
+                    return `
+                        <div class="flex flex-col md:flex-row md:items-center justify-between bg-bg/50 p-4 rounded border border-border/50 hover:border-primary/30 transition gap-3">
+                            <div class="flex flex-col">
+                                <span class="text-white font-bold">${l.title || 'Sem Nome'}</span>
+                                <span class="text-gray-500 text-xs mt-1"><i class="fa-solid fa-phone text-[10px]"></i> ${l.phone || 'Sem telefone'}</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="flex flex-col items-end gap-1">
+                                    <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded border border-border bg-card ${stageColor}">
+                                        ${stageName}
+                                    </span>
+                                    <span class="text-gray-600 text-[10px]"><i class="fa-regular fa-calendar"></i> ${date}</span>
+                                </div>
+                                <button onclick='window.app.editLeadFromSearch(${JSON.stringify(l).replace(/'/g, "&#39;")})' class="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 rounded transition">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
             openReports: () => {
                 document.getElementById('reportsModal').classList.remove('hidden');
                 const deals = window.app.deals;
@@ -352,6 +414,34 @@
 
                     await Promise.all([window.app.loadVehicles(), window.app.loadDeals(), window.app.loadReasons()]);
                 } catch (e) { console.error(e); }
+            },
+
+            // LÓGICA DE PESQUISA
+            searchLead: async () => {
+                const input = document.getElementById('search-input');
+                const term = input.value.trim();
+                if (!term) return;
+
+                try {
+                    const { data, error } = await window.app.supabase
+                        .from('deals')
+                        .select('*')
+                        .or(`title.ilike.%${term}%,phone.ilike.%${term}%,company.ilike.%${term}%`)
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+                    
+                    window.ui.renderSearchResults(data);
+                    window.ui.openSearch();
+                } catch (e) {
+                    console.error("Erro na busca:", e);
+                    Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Erro ao buscar', background: '#151A25', color: '#fff' });
+                }
+            },
+            
+            editLeadFromSearch: (lead) => {
+                window.ui.closeSearch(null, true);
+                window.ui.editDeal(lead);
             },
 
             loadVehicles: async () => {
@@ -434,15 +524,14 @@
                     insucesso: insucessoValue
                 };
 
-                // LÓGICA DE AUTOMAÇÃO DE ETAPA
                 if (stageOverride) {
                     deal.stage = stageOverride;
                     if (stageOverride === 'ganho' && !deal.closing_date) deal.closing_date = new Date().toISOString().split('T')[0];
                 } else {
                     if (insucessoValue) {
-                        deal.stage = 'insucesso'; // Move para insucesso automaticamente
+                        deal.stage = 'insucesso'; 
                     } else if (!id) {
-                        deal.stage = 'prospeccao'; // Padrão se for um negócio novo
+                        deal.stage = 'prospeccao'; 
                     }
                 }
 
@@ -555,4 +644,3 @@
     </script>
 </body>
 </html>
-
