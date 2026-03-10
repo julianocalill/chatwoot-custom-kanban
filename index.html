@@ -49,6 +49,13 @@
         
         <div class="flex gap-2 items-center">
             
+            <div class="bg-bg border border-border rounded-lg px-2 py-1.5 flex items-center gap-2 focus-within:border-primary/50 transition">
+                <i class="fa-solid fa-filter text-gray-500"></i>
+                <select id="filter-seller" onchange="window.app.applyFilters()" class="bg-transparent text-gray-300 outline-none text-xs w-32 cursor-pointer">
+                    <option value="">Todos Vendedores</option>
+                </select>
+            </div>
+
             <div class="bg-bg border border-border rounded-lg px-3 py-1.5 flex items-center gap-2 focus-within:border-primary/50 transition mr-2">
                 <i class="fa-solid fa-magnifying-glass text-gray-500"></i>
                 <input type="text" id="search-input" placeholder="Buscar lead..." class="bg-transparent text-gray-300 outline-none text-xs w-40" onkeypress="if(event.key === 'Enter') window.app.searchLead()">
@@ -294,18 +301,14 @@
                 const val = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.value || 0);
                 const date = new Date(d.created_at).toLocaleDateString('pt-BR').slice(0, 5);
                 
-                // Montagem das Tags visuais
                 const insucessoBadge = d.insucesso ? `<div class="text-[10px] bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded inline-block mb-2 border border-orange-500/20 truncate max-w-full mr-1"><i class="fa-solid fa-triangle-exclamation"></i> ${d.insucesso}</div>` : '';
                 const productBadge = d.product ? `<div class="text-[10px] bg-gray-500/10 text-gray-300 px-2 py-0.5 rounded inline-block mb-2 border border-gray-500/20 truncate max-w-full mr-1"><i class="fa-solid fa-car"></i> Deseja: ${d.product}</div>` : '';
                 
-                // Tag de Compra/Troca
                 const typeColor = d.deal_type === 'Troca' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20';
                 const typeBadge = `<div class="text-[10px] ${typeColor} px-2 py-0.5 rounded inline-block mb-2 border truncate max-w-full mr-1">${d.deal_type || 'Compra'}</div>`;
                 
-                // Tag Vendedor
                 const sellerBadge = d.seller ? `<div class="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded inline-block mb-2 border border-green-500/20 truncate max-w-full mr-1"><i class="fa-solid fa-user-tie"></i> ${d.seller}</div>` : '';
 
-                // Header do card (Mostra o carro na troca se houver)
                 const headerText = d.trade_car ? `<i class="fa-solid fa-car-side text-gray-600"></i> Troca: ${d.trade_car}` : `Lead`;
 
                 el.innerHTML = `
@@ -319,7 +322,7 @@
             openModal: () => {
                 document.getElementById('dealForm').reset();
                 document.getElementById('dealId').value = '';
-                document.getElementById('dealType').value = 'Compra'; // Reset default
+                document.getElementById('dealType').value = 'Compra'; 
                 document.getElementById('timelineList').innerHTML = '<div class="text-center text-gray-500 mt-10">Salve para adicionar notas.</div>';
                 document.getElementById('dealModal').classList.remove('hidden');
                 document.getElementById('btnDelete').classList.add('hidden');
@@ -331,7 +334,7 @@
             editDeal: (d) => {
                 document.getElementById('dealId').value = d.id;
                 document.getElementById('dealTitle').value = d.title;
-                document.getElementById('dealTradeCar').value = d.trade_car || ''; // Carro na troca
+                document.getElementById('dealTradeCar').value = d.trade_car || ''; 
                 document.getElementById('dealSeller').value = d.seller || '';
                 document.getElementById('dealType').value = d.deal_type || 'Compra';
                 document.getElementById('dealEmail').value = d.email || '';
@@ -358,7 +361,6 @@
             },
             toggleSettings: () => document.getElementById('settingsModal').classList.toggle('hidden'),
             
-            // FUNÇÕES DA PESQUISA
             openSearch: () => {
                 document.getElementById('search-modal').classList.remove('hidden');
                 document.getElementById('search-modal').classList.add('flex');
@@ -404,13 +406,11 @@
                 }).join('');
             },
 
-            // RELATÓRIOS (Ajustado para contar Quantidade em vez de R$)
             openReports: () => {
                 document.getElementById('reportsModal').classList.remove('hidden');
                 const deals = window.app.deals;
                 const stages = config.stages;
                 
-                // Agora mapia e conta o tamanho do array (.length) em vez de somar .value
                 const dataStage = Object.keys(stages).map(k => deals.filter(d => d.stage === k).length);
                 
                 if(window.chart1) window.chart1.destroy();
@@ -451,7 +451,6 @@
                 select.innerHTML = '<option value="">Selecione...</option>' + window.app.reasons.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
             },
 
-            // VENDEDORES UI
             openSellersManager: () => {
                 document.getElementById('sellersManagerModal').classList.remove('hidden');
                 window.ui.renderSellersList();
@@ -468,6 +467,17 @@
                 const select = document.getElementById('dealSeller');
                 if(select) {
                     select.innerHTML = '<option value="">Sem Vendedor...</option>' + window.app.sellers.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+                }
+            },
+            // Renderiza as opções no Filtro do Header
+            renderFilterSellerSelect: () => {
+                const select = document.getElementById('filter-seller');
+                if(select) {
+                    const currentVal = select.value;
+                    select.innerHTML = '<option value="">Todos Vendedores</option>' + window.app.sellers.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+                    if(window.app.sellers.find(s => s.name === currentVal)) {
+                        select.value = currentVal;
+                    }
                 }
             },
 
@@ -494,8 +504,29 @@
                         .on('postgres_changes', { event: '*', schema: 'public', table: 'deals' }, () => window.app.loadDeals())
                         .subscribe();
 
-                    await Promise.all([window.app.loadVehicles(), window.app.loadDeals(), window.app.loadReasons(), window.app.loadSellers()]);
+                    await Promise.all([window.app.loadVehicles(), window.app.loadReasons(), window.app.loadSellers(), window.app.loadDeals()]);
                 } catch (e) { console.error(e); }
+            },
+
+            // Lógica do Filtro Superior
+            applyFilters: () => {
+                const sellerFilter = document.getElementById('filter-seller').value;
+                let filteredDeals = window.app.deals;
+                
+                if (sellerFilter) {
+                    filteredDeals = filteredDeals.filter(d => d.seller === sellerFilter);
+                }
+
+                document.querySelectorAll('.kanban-list').forEach(el => el.innerHTML = '');
+                let total = 0;
+                filteredDeals.forEach(d => {
+                    if (config.stages[d.stage]) {
+                        document.getElementById(`col-${d.stage}`).appendChild(window.ui.createCard(d));
+                        total += d.value || 0;
+                    }
+                });
+                document.getElementById('total-pipeline').innerText = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+                window.ui.updateCounts();
             },
 
             searchLead: async () => {
@@ -563,12 +594,12 @@
                 }
             },
 
-            // LÓGICA DE VENDEDORES
             loadSellers: async () => {
                 const { data, error } = await window.app.supabase.from('sellers').select('*').order('name');
                 if (error) console.error("Erro ao carregar vendedores:", error);
                 window.app.sellers = data || [];
                 window.ui.renderSellerSelect(); 
+                window.ui.renderFilterSellerSelect();
             },
             saveSeller: async (e) => {
                 e.preventDefault();
@@ -601,16 +632,7 @@
             loadDeals: async () => {
                 const { data } = await window.app.supabase.from('deals').select('*').neq('stage', 'perdido').order('created_at', { ascending: false });
                 window.app.deals = data || []; 
-                document.querySelectorAll('.kanban-list').forEach(el => el.innerHTML = '');
-                let total = 0;
-                window.app.deals.forEach(d => {
-                    if (config.stages[d.stage]) {
-                        document.getElementById(`col-${d.stage}`).appendChild(window.ui.createCard(d));
-                        total += d.value || 0;
-                    }
-                });
-                document.getElementById('total-pipeline').innerText = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
-                window.ui.updateCounts();
+                window.app.applyFilters(); // Usa a lógica do filtro ao invés de renderizar direto
             },
 
             saveDeal: async (e, stageOverride = null) => {
@@ -695,7 +717,6 @@
                 }
             },
 
-            // EXPORTAÇÃO CSV ATUALIZADA (Nome, Carro Desejado, Telefone, E-mail)
             exportCSV: () => {
                 const deals = window.app.deals;
                 if(!deals.length) return alert('Nada para exportar.');
@@ -778,4 +799,3 @@
     </script>
 </body>
 </html>
-
