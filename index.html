@@ -7,10 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script>
         tailwind.config = {
@@ -53,6 +54,9 @@
                 <input type="text" id="search-input" placeholder="Buscar lead..." class="bg-transparent text-gray-300 outline-none text-xs w-40" onkeypress="if(event.key === 'Enter') window.app.searchLead()">
             </div>
 
+            <button onclick="window.ui.openSellersManager()" class="flex items-center gap-2 px-3 py-2 bg-card hover:bg-white/5 border border-border rounded text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-user-tie"></i> Vendedores
+            </button>
             <button onclick="window.ui.openReasonsManager()" class="flex items-center gap-2 px-3 py-2 bg-card hover:bg-white/5 border border-border rounded text-gray-400 hover:text-white transition">
                 <i class="fa-solid fa-thumbs-down"></i> Motivos
             </button>
@@ -90,15 +94,30 @@
                     </div>
                     <div class="space-y-3">
                         <div class="grid grid-cols-2 gap-3">
-                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Cliente</label><input type="text" id="dealTitle" required class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
-                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Empresa</label><input type="text" id="dealCompany" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
+                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Cliente / Lead</label><input type="text" id="dealTitle" required class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
+                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Carro na Troca</label><input type="text" id="dealTradeCar" placeholder="Ex: Corolla 2018" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
                         </div>
                         
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-3 gap-3">
                             <div>
-                                <label class="text-[10px] uppercase font-bold text-primary">Veículo (Estoque)</label>
+                                <label class="text-[10px] uppercase font-bold text-primary">Veículo Desejado</label>
                                 <select id="dealProduct" onchange="window.app.autoFillPrice()" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"><option value="">Carregando...</option></select>
                             </div>
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-gray-500">Tipo</label>
+                                <select id="dealType" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none">
+                                    <option value="Compra">Somente Compra</option>
+                                    <option value="Troca">Compra com Troca</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-gray-500">Vendedor</label>
+                                <select id="dealSeller" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"><option value="">Selecione...</option></select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Email</label><input type="email" id="dealEmail" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
                             <div>
                                 <label class="text-[10px] uppercase font-bold text-gray-500">Status Insucesso</label>
                                 <select id="dealInsucesso" class="w-full bg-bg border border-border rounded p-2 text-gray-300 focus:border-primary outline-none">
@@ -112,17 +131,15 @@
                                 </select>
                             </div>
                         </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Email</label><input type="email" id="dealEmail" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
-                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Canal</label><input type="text" id="dealChannel" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
-                        </div>
                         <div class="grid grid-cols-3 gap-3">
                             <div><label class="text-[10px] uppercase font-bold text-gray-500">Valor (R$)</label><input type="number" id="dealValue" step="0.01" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none font-mono"></div>
-                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Chat ID</label><input type="text" id="dealChatId" class="w-full bg-bg border border-border rounded p-2 text-gray-400 bg-black/20 outline-none"></div>
+                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Canal</label><input type="text" id="dealChannel" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
                             <div><label class="text-[10px] uppercase font-bold text-gray-500">Prev. Fechamento</label><input type="date" id="dealClosing" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
                         </div>
-                        <div><label class="text-[10px] uppercase font-bold text-gray-500">Data Reunião</label><input type="datetime-local" id="dealMeeting" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Data Reunião</label><input type="datetime-local" id="dealMeeting" class="w-full bg-bg border border-border rounded p-2 text-white focus:border-primary outline-none"></div>
+                            <div><label class="text-[10px] uppercase font-bold text-gray-500">Chat ID</label><input type="text" id="dealChatId" class="w-full bg-bg border border-border rounded p-2 text-gray-400 bg-black/20 outline-none"></div>
+                        </div>
                     </div>
                     <div class="mt-8 flex justify-between items-center pt-4 border-t border-border">
                         <button type="button" onclick="window.app.deleteDeal()" id="btnDelete" class="text-red-500 hover:text-red-400 hidden"><i class="fa-solid fa-trash-can"></i></button>
@@ -153,7 +170,7 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-card p-6 rounded-xl border border-border shadow-lg">
-                    <h3 class="text-lg font-bold mb-4 text-white">Funil de Vendas (Valor R$)</h3>
+                    <h3 class="text-lg font-bold mb-4 text-white">Funil de Vendas (Qtd. Leads)</h3>
                     <div class="h-64"><canvas id="chartStage"></canvas></div>
                 </div>
                 <div class="bg-card p-6 rounded-xl border border-border shadow-lg">
@@ -164,11 +181,25 @@
         </div>
     </div>
 
+    <div id="sellersManagerModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-[60] backdrop-blur-sm">
+        <div class="bg-card border border-border rounded-xl p-6 w-96">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-white">Vendedores</h2>
+                <button onclick="document.getElementById('sellersManagerModal').classList.add('hidden')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="window.app.saveSeller(event)" class="flex gap-2 mb-4">
+                <input type="text" id="newSellerName" placeholder="Nome do vendedor..." class="flex-1 bg-bg border border-border rounded p-2 text-white outline-none" required>
+                <button type="submit" class="bg-primary hover:bg-blue-600 text-white px-4 rounded font-bold">+</button>
+            </form>
+            <div id="sellersList" class="max-h-60 overflow-y-auto space-y-2 custom-scrollbar"></div>
+        </div>
+    </div>
+
     <div id="reasonsManagerModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-[60] backdrop-blur-sm">
         <div class="bg-card border border-border rounded-xl p-6 w-96">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold text-white">Motivos de Perda</h2>
-                <button onclick="document.getElementById('reasonsManagerModal').classList.add('hidden')" class="text-gray-400">x</button>
+                <button onclick="document.getElementById('reasonsManagerModal').classList.add('hidden')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form onsubmit="window.app.saveReason(event)" class="flex gap-2 mb-4">
                 <input type="text" id="newReasonName" placeholder="Novo motivo..." class="flex-1 bg-bg border border-border rounded p-2 text-white outline-none" required>
@@ -262,12 +293,23 @@
                 const val = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.value || 0);
                 const date = new Date(d.created_at).toLocaleDateString('pt-BR').slice(0, 5);
                 
+                // Montagem das Tags visuais
                 const insucessoBadge = d.insucesso ? `<div class="text-[10px] bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded inline-block mb-2 border border-orange-500/20 truncate max-w-full mr-1"><i class="fa-solid fa-triangle-exclamation"></i> ${d.insucesso}</div>` : '';
-                const productBadge = d.product ? `<div class="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded inline-block mb-2 border border-primary/20 truncate max-w-full"><i class="fa-solid fa-car"></i> ${d.product}</div>` : '';
+                const productBadge = d.product ? `<div class="text-[10px] bg-gray-500/10 text-gray-300 px-2 py-0.5 rounded inline-block mb-2 border border-gray-500/20 truncate max-w-full mr-1"><i class="fa-solid fa-car"></i> Deseja: ${d.product}</div>` : '';
                 
+                // Tag de Compra/Troca
+                const typeColor = d.deal_type === 'Troca' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+                const typeBadge = `<div class="text-[10px] ${typeColor} px-2 py-0.5 rounded inline-block mb-2 border truncate max-w-full mr-1">${d.deal_type || 'Compra'}</div>`;
+                
+                // Tag Vendedor
+                const sellerBadge = d.seller ? `<div class="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded inline-block mb-2 border border-green-500/20 truncate max-w-full mr-1"><i class="fa-solid fa-user-tie"></i> ${d.seller}</div>` : '';
+
+                // Header do card (Mostra o carro na troca se houver)
+                const headerText = d.trade_car ? `<i class="fa-solid fa-car-side text-gray-600"></i> Troca: ${d.trade_car}` : `Lead`;
+
                 el.innerHTML = `
-                    <div class="flex justify-between items-start mb-2"><span class="text-[10px] font-bold text-gray-500 uppercase truncate max-w-[150px]">${d.company || 'Cliente'}</span><span class="text-[10px] text-gray-600">${date}</span></div>
-                    ${insucessoBadge} ${productBadge}
+                    <div class="flex justify-between items-start mb-2"><span class="text-[10px] font-bold text-gray-500 uppercase truncate max-w-[150px]">${headerText}</span><span class="text-[10px] text-gray-600">${date}</span></div>
+                    ${typeBadge} ${sellerBadge} ${insucessoBadge} ${productBadge}
                     <h4 class="font-bold text-gray-200 text-sm mb-1 truncate">${d.title}</h4>
                     <p class="font-mono text-xs text-gray-400 font-medium">${val}</p>
                 `;
@@ -276,6 +318,7 @@
             openModal: () => {
                 document.getElementById('dealForm').reset();
                 document.getElementById('dealId').value = '';
+                document.getElementById('dealType').value = 'Compra'; // Reset default
                 document.getElementById('timelineList').innerHTML = '<div class="text-center text-gray-500 mt-10">Salve para adicionar notas.</div>';
                 document.getElementById('dealModal').classList.remove('hidden');
                 document.getElementById('btnDelete').classList.add('hidden');
@@ -287,7 +330,9 @@
             editDeal: (d) => {
                 document.getElementById('dealId').value = d.id;
                 document.getElementById('dealTitle').value = d.title;
-                document.getElementById('dealCompany').value = d.company || '';
+                document.getElementById('dealTradeCar').value = d.trade_car || ''; // Carro na troca
+                document.getElementById('dealSeller').value = d.seller || '';
+                document.getElementById('dealType').value = d.deal_type || 'Compra';
                 document.getElementById('dealEmail').value = d.email || '';
                 document.getElementById('dealPhone').value = d.phone || '';
                 document.getElementById('dealValue').value = d.value || 0;
@@ -358,20 +403,34 @@
                 }).join('');
             },
 
+            // RELATÓRIOS (Ajustado para contar Quantidade em vez de R$)
             openReports: () => {
                 document.getElementById('reportsModal').classList.remove('hidden');
                 const deals = window.app.deals;
                 const stages = config.stages;
-                const dataStage = Object.keys(stages).map(k => deals.filter(d => d.stage === k).reduce((acc, curr) => acc + (parseFloat(curr.value)||0), 0));
+                
+                // Agora mapia e conta o tamanho do array (.length) em vez de somar .value
+                const dataStage = Object.keys(stages).map(k => deals.filter(d => d.stage === k).length);
                 
                 if(window.chart1) window.chart1.destroy();
-                window.chart1 = new Chart(document.getElementById('chartStage'), { type: 'bar', data: { labels: Object.values(stages).map(s => s.title), datasets: [{ label: 'Valor (R$)', data: dataStage, backgroundColor: '#3B82F6', borderRadius: 4 }] }, options: { indexAxis: 'y', maintainAspectRatio: false } });
+                window.chart1 = new Chart(document.getElementById('chartStage'), { 
+                    type: 'bar', 
+                    data: { 
+                        labels: Object.values(stages).map(s => s.title), 
+                        datasets: [{ label: 'Quantidade (Cards)', data: dataStage, backgroundColor: '#3B82F6', borderRadius: 4 }] 
+                    }, 
+                    options: { indexAxis: 'y', maintainAspectRatio: false } 
+                });
 
                 const losses = {}; 
                 deals.filter(d => d.stage === 'perdido').forEach(d => { const r = d.loss_reason || 'Não informado'; losses[r] = (losses[r]||0)+1; });
                 
                 if(window.chart2) window.chart2.destroy();
-                window.chart2 = new Chart(document.getElementById('chartLoss'), { type: 'doughnut', data: { labels: Object.keys(losses), datasets: [{ data: Object.values(losses), backgroundColor: ['#EF4444', '#F59E0B', '#10B981', '#3B82F6'] }] }, options: { maintainAspectRatio: false } });
+                window.chart2 = new Chart(document.getElementById('chartLoss'), { 
+                    type: 'doughnut', 
+                    data: { labels: Object.keys(losses), datasets: [{ data: Object.values(losses), backgroundColor: ['#EF4444', '#F59E0B', '#10B981', '#3B82F6'] }] }, 
+                    options: { maintainAspectRatio: false } 
+                });
             },
 
             openReasonsManager: () => {
@@ -390,6 +449,25 @@
                 const select = document.getElementById(targetId);
                 select.innerHTML = '<option value="">Selecione...</option>' + window.app.reasons.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
             },
+
+            // VENDEDORES UI
+            openSellersManager: () => {
+                document.getElementById('sellersManagerModal').classList.remove('hidden');
+                window.ui.renderSellersList();
+            },
+            renderSellersList: () => {
+                const list = document.getElementById('sellersList');
+                list.innerHTML = window.app.sellers.map(s => `
+                    <div class="flex justify-between bg-bg p-2 rounded border border-border">
+                        <span class="text-white"><i class="fa-solid fa-user-tie text-gray-500 mr-2"></i> ${s.name}</span>
+                        <button onclick="window.app.deleteSeller(${s.id})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>
+                    </div>`).join('');
+            },
+            renderSellerSelect: () => {
+                const select = document.getElementById('dealSeller');
+                select.innerHTML = '<option value="">Sem Vendedor...</option>' + window.app.sellers.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+            },
+
             cancelLoss: () => { window.app.pendingDrag = null; document.getElementById('selectReasonModal').classList.add('hidden'); window.app.loadDeals(); },
             confirmLoss: () => window.app.confirmLoss(),
             updateCounts: () => document.querySelectorAll('.kanban-list').forEach(l => l.previousElementSibling.querySelector('.count').innerText = l.children.length)
@@ -400,6 +478,7 @@
             deals: [],
             vehicles: [],
             reasons: [],
+            sellers: [],
             pendingDrag: null,
 
             init: async () => {
@@ -412,11 +491,10 @@
                         .on('postgres_changes', { event: '*', schema: 'public', table: 'deals' }, () => window.app.loadDeals())
                         .subscribe();
 
-                    await Promise.all([window.app.loadVehicles(), window.app.loadDeals(), window.app.loadReasons()]);
+                    await Promise.all([window.app.loadVehicles(), window.app.loadDeals(), window.app.loadReasons(), window.app.loadSellers()]);
                 } catch (e) { console.error(e); }
             },
 
-            // LÓGICA DE PESQUISA
             searchLead: async () => {
                 const input = document.getElementById('search-input');
                 const term = input.value.trim();
@@ -426,7 +504,7 @@
                     const { data, error } = await window.app.supabase
                         .from('deals')
                         .select('*')
-                        .or(`title.ilike.%${term}%,phone.ilike.%${term}%,company.ilike.%${term}%`)
+                        .or(`title.ilike.%${term}%,phone.ilike.%${term}%,trade_car.ilike.%${term}%`)
                         .order('created_at', { ascending: false });
 
                     if (error) throw error;
@@ -462,7 +540,6 @@
                 window.app.reasons = data || [];
                 window.ui.renderReasonSelect(); 
             },
-
             saveReason: async (e) => {
                 e.preventDefault();
                 await window.app.supabase.from('loss_reasons').insert([{ name: document.getElementById('newReasonName').value }]);
@@ -470,12 +547,32 @@
                 await window.app.loadReasons();
                 window.ui.renderReasonsList();
             },
-
             deleteReason: async (id) => {
                 if(confirm('Excluir?')) {
                     await window.app.supabase.from('loss_reasons').delete().eq('id', id);
                     await window.app.loadReasons();
                     window.ui.renderReasonsList();
+                }
+            },
+
+            // LÓGICA DE VENDEDORES
+            loadSellers: async () => {
+                const { data } = await window.app.supabase.from('sellers').select('*').order('name');
+                window.app.sellers = data || [];
+                window.ui.renderSellerSelect(); 
+            },
+            saveSeller: async (e) => {
+                e.preventDefault();
+                await window.app.supabase.from('sellers').insert([{ name: document.getElementById('newSellerName').value }]);
+                document.getElementById('newSellerName').value = '';
+                await window.app.loadSellers();
+                window.ui.renderSellersList();
+            },
+            deleteSeller: async (id) => {
+                if(confirm('Excluir Vendedor?')) {
+                    await window.app.supabase.from('sellers').delete().eq('id', id);
+                    await window.app.loadSellers();
+                    window.ui.renderSellersList();
                 }
             },
 
@@ -511,7 +608,9 @@
 
                 const deal = {
                     title: document.getElementById('dealTitle').value,
-                    company: document.getElementById('dealCompany').value,
+                    trade_car: document.getElementById('dealTradeCar').value,
+                    seller: document.getElementById('dealSeller').value,
+                    deal_type: document.getElementById('dealType').value,
                     email: document.getElementById('dealEmail').value,
                     phone: document.getElementById('dealPhone').value,
                     value: document.getElementById('dealValue').value || 0,
@@ -580,20 +679,27 @@
                 }
             },
 
+            // EXPORTAÇÃO CSV ATUALIZADA (Nome, Carro Desejado, Telefone, E-mail)
             exportCSV: () => {
                 const deals = window.app.deals;
                 if(!deals.length) return alert('Nada para exportar.');
-                const headers = ['ID', 'Cliente', 'Etapa', 'Valor', 'Data Criação', 'Veículo', 'Insucesso', 'Motivo Perda'];
+                
+                const headers = ['Nome do Lead', 'Carro Desejado', 'Telefone', 'E-mail'];
                 const rows = deals.map(d => [
-                    d.id, d.title, d.stage, d.value, new Date(d.created_at).toLocaleDateString(), d.product || '', d.insucesso || '', d.loss_reason || ''
+                    `"${d.title || ''}"`,
+                    `"${d.product || ''}"`,
+                    `"${d.phone || ''}"`,
+                    `"${d.email || ''}"`
                 ]);
+                
                 const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join("\n");
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
                 link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "deals_export.csv");
+                link.setAttribute("download", "leads_exportados.csv");
                 document.body.appendChild(link);
                 link.click();
+                document.body.removeChild(link);
             },
 
             loadTimeline: async (dealId) => {
@@ -633,7 +739,19 @@
                     let res = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/search?q=${query}`, { headers: { 'api_access_token': config.cwToken } });
                     let json = await res.json(); let contact = json.payload?.[0];
                     if(!contact && !isNaN(query)) { let cRes = await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/conversations/${query}`, { headers: { 'api_access_token': config.cwToken } }); if(cRes.ok) { let c = await cRes.json(); contact = c.meta.sender; document.getElementById('dealChatId').value = c.id; document.getElementById('dealChannel').value = c.meta.channel; } }
-                    if(contact) { document.getElementById('dealTitle').value = contact.name; document.getElementById('dealEmail').value = contact.email; document.getElementById('dealPhone').value = contact.phone_number; document.getElementById('dealCompany').value = contact.additional_attributes?.company_name || ''; if(!document.getElementById('dealChatId').value) { let convs = await (await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/${contact.id}/conversations`, { headers: { 'api_access_token': config.cwToken } })).json(); if(convs.payload?.[0]) { document.getElementById('dealChatId').value = convs.payload[0].id; document.getElementById('dealChannel').value = convs.payload[0].meta.channel; } } } else alert("Não encontrado no Chatwoot");
+                    if(contact) { 
+                        document.getElementById('dealTitle').value = contact.name; 
+                        document.getElementById('dealEmail').value = contact.email; 
+                        document.getElementById('dealPhone').value = contact.phone_number; 
+                        
+                        if(!document.getElementById('dealChatId').value) { 
+                            let convs = await (await fetch(`${config.cwUrl}/api/v1/accounts/${config.cwAccount}/contacts/${contact.id}/conversations`, { headers: { 'api_access_token': config.cwToken } })).json(); 
+                            if(convs.payload?.[0]) { 
+                                document.getElementById('dealChatId').value = convs.payload[0].id; 
+                                document.getElementById('dealChannel').value = convs.payload[0].meta.channel; 
+                            } 
+                        } 
+                    } else alert("Não encontrado no Chatwoot");
                 } catch(e) { console.error(e); alert("Erro ao buscar no Chatwoot. Verifique as credenciais na engrenagem."); }
             }
         };
