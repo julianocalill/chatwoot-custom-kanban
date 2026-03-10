@@ -465,7 +465,9 @@
             },
             renderSellerSelect: () => {
                 const select = document.getElementById('dealSeller');
-                select.innerHTML = '<option value="">Sem Vendedor...</option>' + window.app.sellers.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+                if(select) {
+                    select.innerHTML = '<option value="">Sem Vendedor...</option>' + window.app.sellers.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+                }
             },
 
             cancelLoss: () => { window.app.pendingDrag = null; document.getElementById('selectReasonModal').classList.add('hidden'); window.app.loadDeals(); },
@@ -542,7 +544,12 @@
             },
             saveReason: async (e) => {
                 e.preventDefault();
-                await window.app.supabase.from('loss_reasons').insert([{ name: document.getElementById('newReasonName').value }]);
+                const nome = document.getElementById('newReasonName').value;
+                const { error } = await window.app.supabase.from('loss_reasons').insert([{ name: nome }]);
+                if(error) {
+                    Swal.fire('Erro', 'Não foi possível salvar o motivo: ' + error.message, 'error');
+                    return;
+                }
                 document.getElementById('newReasonName').value = '';
                 await window.app.loadReasons();
                 window.ui.renderReasonsList();
@@ -557,13 +564,21 @@
 
             // LÓGICA DE VENDEDORES
             loadSellers: async () => {
-                const { data } = await window.app.supabase.from('sellers').select('*').order('name');
+                const { data, error } = await window.app.supabase.from('sellers').select('*').order('name');
+                if (error) console.error("Erro ao carregar vendedores:", error);
                 window.app.sellers = data || [];
                 window.ui.renderSellerSelect(); 
             },
             saveSeller: async (e) => {
                 e.preventDefault();
-                await window.app.supabase.from('sellers').insert([{ name: document.getElementById('newSellerName').value }]);
+                const nome = document.getElementById('newSellerName').value;
+                const { error } = await window.app.supabase.from('sellers').insert([{ name: nome }]);
+                
+                if (error) {
+                    Swal.fire('Erro', 'Não foi possível salvar o vendedor: ' + error.message, 'error');
+                    return;
+                }
+
                 document.getElementById('newSellerName').value = '';
                 await window.app.loadSellers();
                 window.ui.renderSellersList();
